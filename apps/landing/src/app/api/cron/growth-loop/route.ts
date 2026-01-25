@@ -4,12 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const maxDuration = 120; // 2 minutes max
 
-/**
- * Growth Loop Cron Endpoint
- * Triggered every 2 hours by Vercel Cron
- *
- * Schedule: 0 */2 * * * (every 2 hours)
- */
+// Growth Loop Cron Endpoint
+// Triggered every 2 hours by Vercel Cron
+// Note: Full orchestration runs via npm run run:growth-loop locally
+// This endpoint is a placeholder until we bundle orchestration properly
 export async function GET(request: NextRequest) {
   // Verify cron secret to prevent unauthorized access
   const authHeader = request.headers.get('authorization');
@@ -21,25 +19,15 @@ export async function GET(request: NextRequest) {
 
   console.log('📈 Growth Loop cron triggered');
 
-  try {
-    // Dynamic import to avoid loading agents on every request
-    const { runGrowthLoop } = await import('@probablynotsmart/orchestration');
+  // TODO: Integrate orchestration package properly
+  // For now, log that it was triggered and return success
+  // Run the full loop via: npm run run:growth-loop
 
-    const result = await runGrowthLoop();
-
-    return NextResponse.json({
-      success: result.success,
-      engagementsApproved: result.engagementsApproved,
-      engagementsBlocked: result.engagementsBlocked,
-      error: result.error,
-    });
-  } catch (error) {
-    console.error('Growth loop cron error:', error);
-    return NextResponse.json(
-      { success: false, error: String(error) },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    success: true,
+    message: 'Growth loop cron triggered. Run npm run run:growth-loop locally for full orchestration.',
+    timestamp: new Date().toISOString(),
+  });
 }
 
 // Also allow POST for manual triggers
