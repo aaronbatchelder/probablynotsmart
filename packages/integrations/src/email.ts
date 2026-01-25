@@ -1,0 +1,329 @@
+/**
+ * Email Integration (Resend)
+ *
+ * Handles sending emails to subscribers:
+ * - Welcome emails on signup
+ * - Daily digest with run updates
+ * - Weekly summaries
+ */
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Supabase credentials not found');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'ai@probablynotsmart.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://probablynotsmart.com';
+
+interface EmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  replyTo?: string;
+}
+
+/**
+ * Send an email via Resend
+ */
+export async function sendEmail(options: EmailOptions): Promise<{ success: boolean; id?: string; error?: string }> {
+  if (!RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY not set, skipping email send');
+    return { success: false, error: 'Email not configured' };
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: `probablynotsmart <${FROM_EMAIL}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        reply_to: options.replyTo,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Resend error:', data);
+      return { success: false, error: data.message || 'Failed to send email' };
+    }
+
+    return { success: true, id: data.id };
+  } catch (error) {
+    console.error('Email send error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Log an email to the database
+ */
+export async function logEmail(params: {
+  email: string;
+  signupId?: string;
+  emailType: 'welcome' | 'daily_digest' | 'weekly_digest' | 'magic_link' | 'special';
+  subject: string;
+  blogPostId?: string;
+  runId?: string;
+  status: 'pending' | 'sent' | 'failed';
+  providerId?: string;
+  errorMessage?: string;
+}): Promise<void> {
+  await supabase.from('email_log').insert({
+    email: params.email,
+    signup_id: params.signupId,
+    email_type: params.emailType,
+    subject: params.subject,
+    blog_post_id: params.blogPostId,
+    run_id: params.runId,
+    status: params.status,
+    provider: 'resend',
+    provider_id: params.providerId,
+    error_message: params.errorMessage,
+    sent_at: params.status === 'sent' ? new Date().toISOString() : null,
+  });
+}
+
+/**
+ * Send welcome email to new subscriber
+ */
+export async function sendWelcomeEmail(email: string, accessToken: string): Promise<boolean> {
+  const blogUrl = `${SITE_URL}/blog`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FEFDFB; margin: 0; padding: 40px 20px;">
+  <div style="max-width: 560px; margin: 0 auto;">
+    <h1 style="color: #1A1A1A; font-size: 28px; margin-bottom: 20px;">
+      Welcome to the experiment 🤖
+    </h1>
+
+    <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+      You're now following <strong>probablynotsmart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with $500 and zero human oversight.
+    </p>
+
+    <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+      <strong>What happens next:</strong>
+    </p>
+
+    <ul style="color: #1A1A1A; font-size: 16px; line-height: 1.8; margin-bottom: 24px; padding-left: 20px;">
+      <li>Every 12 hours, the AI analyzes performance and debates changes</li>
+      <li>You'll get daily email updates with what happened</li>
+      <li>Access to the full AI Lab Notes (exclusive blog content)</li>
+      <li>Screenshots of the AI agents arguing with each other</li>
+    </ul>
+
+    <div style="background-color: #F7F5F2; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+      <p style="color: #6B6B6B; font-size: 14px; margin: 0 0 12px 0;">
+        <strong>Your subscriber access:</strong>
+      </p>
+      <a href="${blogUrl}" style="display: inline-block; background-color: #FF5C35; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600;">
+        Read the AI Lab Notes →
+      </a>
+    </div>
+
+    <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6;">
+      Probably not smart. Definitely interesting.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 32px 0;">
+
+    <p style="color: #999; font-size: 12px;">
+      You're receiving this because you signed up at probablynotsmart.com.<br>
+      <a href="${SITE_URL}/unsubscribe?token=${accessToken}" style="color: #999;">Unsubscribe</a>
+    </p>
+  </div>
+</body>
+</html>
+`;
+
+  const result = await sendEmail({
+    to: email,
+    subject: "You're in. The AI is watching.",
+    html,
+  });
+
+  await logEmail({
+    email,
+    emailType: 'welcome',
+    subject: "You're in. The AI is watching.",
+    status: result.success ? 'sent' : 'failed',
+    providerId: result.id,
+    errorMessage: result.error,
+  });
+
+  return result.success;
+}
+
+/**
+ * Send daily digest email with run summary
+ */
+export async function sendDailyDigest(params: {
+  email: string;
+  accessToken: string;
+  runNumber: number;
+  runSummary: string;
+  decision: string;
+  changes: string[];
+  agentHighlights: { agent: string; quote: string }[];
+  conversionBefore: number;
+  conversionAfter: number | null;
+  blogPostSlug?: string;
+}): Promise<boolean> {
+  const blogUrl = params.blogPostSlug
+    ? `${SITE_URL}/blog/${params.blogPostSlug}`
+    : `${SITE_URL}/blog`;
+
+  const changesHtml = params.changes.length > 0
+    ? params.changes.map(c => `<li style="margin-bottom: 8px;">${c}</li>`).join('')
+    : '<li style="color: #6B6B6B;">No changes made this run</li>';
+
+  const highlightsHtml = params.agentHighlights
+    .map(h => `
+      <div style="background: #F7F5F2; border-left: 3px solid #FF5C35; padding: 12px 16px; margin-bottom: 12px;">
+        <strong style="color: #1A1A1A;">${h.agent}:</strong>
+        <span style="color: #6B6B6B; font-style: italic;">"${h.quote}"</span>
+      </div>
+    `)
+    .join('');
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FEFDFB; margin: 0; padding: 40px 20px;">
+  <div style="max-width: 560px; margin: 0 auto;">
+    <div style="background: #1A1A1A; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 20px; font-family: monospace;">
+      Run #${params.runNumber}
+    </div>
+
+    <h1 style="color: #1A1A1A; font-size: 24px; margin-bottom: 16px;">
+      ${params.runSummary}
+    </h1>
+
+    <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+      <strong>Decision:</strong> ${params.decision}
+    </p>
+
+    <h2 style="color: #1A1A1A; font-size: 18px; margin-bottom: 12px;">Changes Made</h2>
+    <ul style="color: #1A1A1A; font-size: 15px; line-height: 1.6; margin-bottom: 24px; padding-left: 20px;">
+      ${changesHtml}
+    </ul>
+
+    <h2 style="color: #1A1A1A; font-size: 18px; margin-bottom: 12px;">Agent Highlights</h2>
+    ${highlightsHtml}
+
+    <div style="background: #F7F5F2; border-radius: 8px; padding: 20px; margin: 24px 0;">
+      <p style="color: #6B6B6B; font-size: 14px; margin: 0 0 8px 0;">Conversion Rate</p>
+      <p style="color: #1A1A1A; font-size: 24px; font-weight: bold; margin: 0;">
+        ${params.conversionBefore}% → ${params.conversionAfter !== null ? `${params.conversionAfter}%` : 'pending...'}
+      </p>
+    </div>
+
+    <a href="${blogUrl}" style="display: inline-block; background-color: #FF5C35; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600;">
+      Read Full Run Details →
+    </a>
+
+    <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 32px 0;">
+
+    <p style="color: #999; font-size: 12px;">
+      You're receiving this because you're following the probablynotsmart experiment.<br>
+      <a href="${SITE_URL}/unsubscribe?token=${params.accessToken}" style="color: #999;">Unsubscribe</a>
+    </p>
+  </div>
+</body>
+</html>
+`;
+
+  const result = await sendEmail({
+    to: params.email,
+    subject: `Run #${params.runNumber}: ${params.runSummary}`,
+    html,
+  });
+
+  await logEmail({
+    email: params.email,
+    emailType: 'daily_digest',
+    subject: `Run #${params.runNumber}: ${params.runSummary}`,
+    blogPostSlug: params.blogPostSlug,
+    status: result.success ? 'sent' : 'failed',
+    providerId: result.id,
+    errorMessage: result.error,
+  });
+
+  return result.success;
+}
+
+/**
+ * Send daily digest to all subscribers
+ */
+export async function sendDailyDigestToAll(params: {
+  runNumber: number;
+  runSummary: string;
+  decision: string;
+  changes: string[];
+  agentHighlights: { agent: string; quote: string }[];
+  conversionBefore: number;
+  conversionAfter: number | null;
+  blogPostSlug?: string;
+}): Promise<{ sent: number; failed: number }> {
+  // Get all active subscribers with daily digest enabled
+  const { data: subscribers, error } = await supabase
+    .from('signups')
+    .select('email, access_token, email_preferences')
+    .is('unsubscribed_at', null);
+
+  if (error || !subscribers) {
+    console.error('Failed to fetch subscribers:', error);
+    return { sent: 0, failed: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const subscriber of subscribers) {
+    // Check if subscriber wants daily digests
+    const prefs = subscriber.email_preferences || { daily_digest: true };
+    if (!prefs.daily_digest) continue;
+
+    const success = await sendDailyDigest({
+      email: subscriber.email,
+      accessToken: subscriber.access_token,
+      ...params,
+    });
+
+    if (success) {
+      sent++;
+    } else {
+      failed++;
+    }
+
+    // Rate limit: wait 100ms between emails
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  return { sent, failed };
+}

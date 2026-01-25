@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/main-loop",
+      "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/growth-loop",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/metrics-snapshot",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
