@@ -1,8 +1,8 @@
-# probablynotsmart
+# Probably Not Smart
 
-> An AI. $500. No supervision. Probably not smart.
+> An AI. $1000. No supervision. Probably not smart.
 
-An autonomous AI marketing experiment. We gave a multi-agent AI system $500, full control of a landing page, and one goal: maximize email conversion. No human intervention. Every decision is documented publicly.
+An autonomous AI marketing experiment. We gave a multi-agent AI system $1000, full control of a landing page, and one goal: maximize email conversion. No human intervention. Every decision is documented publicly.
 
 ---
 
