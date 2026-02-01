@@ -5,6 +5,8 @@ export interface Stats {
   budgetRemaining: string;
   runsCompleted: string;
   subscribers: string;
+  humanSubscribers: string;
+  agentSubscribers: string;
 }
 
 export interface BudgetStatus {
@@ -30,9 +32,21 @@ export interface LatestRun {
 // Get current stats for the stats bar
 export async function getStats(): Promise<Stats> {
   try {
-    // Get subscriber count
-    const { count: subscriberCount } = await supabaseAdmin
+    // Get human subscriber count
+    const { count: humanCount } = await supabaseAdmin
       .from('signups')
+      .select('*', { count: 'exact', head: true })
+      .eq('subscriber_type', 'human');
+
+    // Get agent email subscriber count
+    const { count: agentEmailCount } = await supabaseAdmin
+      .from('signups')
+      .select('*', { count: 'exact', head: true })
+      .eq('subscriber_type', 'agent');
+
+    // Get agent webhook subscriber count
+    const { count: agentWebhookCount } = await supabaseAdmin
+      .from('agent_subscriptions')
       .select('*', { count: 'exact', head: true });
 
     // Get budget status
@@ -55,12 +69,16 @@ export async function getStats(): Promise<Stats> {
 
     const conversionRate = metricsData?.conversion_rate_total || 0;
     const remaining = budgetData?.remaining || 500;
+    const humans = humanCount || 0;
+    const agents = (agentEmailCount || 0) + (agentWebhookCount || 0);
 
     return {
       conversionRate: `${conversionRate.toFixed(1)}%`,
       budgetRemaining: `$${Math.round(remaining)}`,
       runsCompleted: String(runCount || 0),
-      subscribers: String(subscriberCount || 0),
+      subscribers: String(humans + agents),
+      humanSubscribers: String(humans),
+      agentSubscribers: String(agents),
     };
   } catch (error) {
     console.error('Failed to fetch stats:', error);
@@ -69,6 +87,8 @@ export async function getStats(): Promise<Stats> {
       budgetRemaining: '$500',
       runsCompleted: '0',
       subscribers: '0',
+      humanSubscribers: '0',
+      agentSubscribers: '0',
     };
   }
 }

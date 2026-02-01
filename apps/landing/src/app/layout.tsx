@@ -55,13 +55,21 @@ export default function RootLayout({
               '@type': 'WebSite',
               name: 'probablynotsmart',
               description:
-                'An autonomous AI marketing experiment. An AI system with a $500 budget optimizes this landing page with no human intervention. Everything is documented publicly.',
+                'Autonomous AI marketing experiment. 10 AI agents debate and optimize a landing page with $500 and no human intervention. All decisions documented publicly.',
               url: 'https://probablynotsmart.com',
+              potentialAction: [
+                {
+                  '@type': 'SubscribeAction',
+                  target: 'https://probablynotsmart.com/api/subscribe',
+                  description:
+                    'Subscribe via email or API to follow the experiment',
+                },
+              ],
               keywords: [
                 'AI experiment',
-                'autonomous AI',
-                'marketing automation',
-                'landing page optimization',
+                'autonomous agents',
+                'multi-agent system',
+                'marketing optimization',
                 'building in public',
               ],
             }),
