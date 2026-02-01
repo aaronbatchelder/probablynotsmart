@@ -1,62 +1,175 @@
 # probablynotsmart
 
-> An autonomous AI marketing experiment: 10 AI agents with $1000, full control of a landing page, paid ad spend, full access to social media, and zero human oversight. This is probably not smart.
+> An AI. $500. No supervision. Probably not smart.
 
-## The Experiment
+An autonomous AI marketing experiment. We gave a multi-agent AI system $500, full control of a landing page, and one goal: maximize email conversion. No human intervention. Every decision is documented publicly.
 
-What happens when you give AI agents complete autonomy over a marketing budget? We're about to find out.
+---
 
-**The setup:**
-- 10 AI agents with distinct personalities (inspired by Silicon Valley)
-- $1000 budget for ads, tools, and experiments
-- Full control over landing page copy, design, and layout
-- Access to social media accounts
-- One goal: maximize email signups
-- Zero human intervention in decisions
+## How It Works
 
-**The catch:** Every decision, debate, and disaster is documented publicly.
+Every 12 hours, a team of AI agents analyzes performance, debates changes, and deploys updates to the landing page.
+
+```mermaid
+flowchart LR
+    subgraph Input
+        A[(Analytics)]
+    end
+
+    subgraph Core["Core Decision Loop"]
+        B["🎯 Bighead<br/>Analyst"]
+        C["🚀 Gavin<br/>Optimizer"]
+        D["😈 Gilfoyle<br/>Contrarian"]
+        E["🎪 Dinesh<br/>Mission Check"]
+        F["🧊 Laurie<br/>Decision Maker"]
+    end
+
+    subgraph Gates["Validation Gates"]
+        G["💰 Monica<br/>Budget"]
+        H["🌭 Erlich<br/>Content"]
+        I["🔧 Jared<br/>Technical"]
+    end
+
+    subgraph Output
+        J["🌐 Page"]
+    end
+
+    A --> B
+    B --> C
+    C <--> D
+    C --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+    J -.-> A
+```
+
+---
 
 ## The Agents
 
 | Agent | Role | Personality |
 |-------|------|-------------|
-| **Bighead** | Analyst | Stumbles into insights accidentally |
-| **Gavin** | Optimizer | Grandiose, unhinged proposals |
-| **Gilfoyle** | Contrarian | Tears everything apart |
-| **Dinesh** | Mission Anchor | Often ignored, occasionally right |
-| **Laurie** | Decision Maker | Cold, calculating final calls |
-| **Monica** | Budget Guardian | Protects the runway |
-| **Erlich** | Content Gate | Postable or not postable |
-| **Jared** | Technical QA | Quietly competent |
-| **Richard** | Narrator | Writes all public content |
-| **Russ** | Growth Hacker | Shameless engagement tactics |
+| 🎯 **Bighead** | Analyst | Stumbles into insights without fully understanding why |
+| 🚀 **Gavin** | Optimizer | Grandiose, overconfident, proposes bold changes |
+| 😈 **Gilfoyle** | Contrarian | Cynical, tears apart proposals, cites historical failures |
+| 🎪 **Dinesh** | Mission Anchor | Often ignored, occasionally right about mission drift |
+| 🧊 **Laurie** | Decision Maker | Cold, calculating, makes the final call |
+| 💰 **Monica** | Budget Guardian | Responsible, protects runway |
+| 🌭 **Erlich** | Content Gate | Postable / not postable |
+| 🔧 **Jared** | Technical QA | Validates deployments, captures screenshots |
+| 📢 **Richard** | Narrator | Writes all public content |
+| 🔥 **Russ** | Growth Hacker | Scrappy distribution and engagement |
 
-## How It Works
+---
 
-### Main Loop (every 12 hours)
-1. **Bighead** analyzes current metrics
-2. **Gavin** proposes changes (anything goes)
-3. **Gilfoyle** challenges the proposals (up to 3 rounds)
-4. **Dinesh** scores mission alignment
-5. **Monica** checks budget impact
-6. **Laurie** makes the final call
-7. **Jared** validates technical feasibility
-8. Changes deploy (or don't)
-9. **Richard** writes the blog post about what happened
+## System Architecture
 
-### Growth Loop (every 2 hours)
-1. **Russ** generates engagement content
-2. **Erlich** + **Jared** filter for quality
-3. Approved content gets posted
+### Main Optimization Loop (Every 12 hours)
+
+```mermaid
+flowchart TB
+    subgraph Analysis["1. Analysis"]
+        A[(Analytics<br/>+ History)] --> B["🎯 Bighead"]
+    end
+
+    subgraph Strategy["2. Strategy"]
+        B -->|insights| C["🚀 Gavin"]
+        C -->|proposals| D["😈 Gilfoyle"]
+        D -->|critiques| C
+        C -->|aligned proposal| E["🎪 Dinesh"]
+        E -->|advisory| F["🧊 Laurie"]
+    end
+
+    subgraph Validation["3. Validation"]
+        F -->|decision| G["💰 Monica"]
+        G -->|budget ok| H["🌭 Erlich"]
+        H -->|content ok| I["🔧 Jared"]
+    end
+
+    subgraph Deploy["4. Deploy"]
+        I -->|approved| J["⚡ Executor"]
+        J --> K["🌐 Landing Page"]
+    end
+
+    subgraph Content["5. Content"]
+        F -->|context| L["📢 Richard"]
+        I -->|screenshots| L
+        L --> H
+        H -->|approved| M["📤 Blog / Social / Email"]
+    end
+```
+
+### Growth Loop (Every 1-2 hours)
+
+```mermaid
+flowchart LR
+    A["📡 Social<br/>Signals"] --> B["🔥 Russ"]
+    B -->|draft| C["😈 Gilfoyle<br/>Tactics Check"]
+    C -->|approved| D["🌭 Erlich<br/>Content Check"]
+    D -->|approved| E["🐦 Post /<br/>Reply / QT"]
+    E -.-> A
+```
+
+---
+
+## Content Flow
+
+| Agent | Content Type | Cadence |
+|-------|-------------|---------|
+| **Richard** | Run updates, blog posts, email digests | Every 12 hours |
+| **Richard** | Daily summary blog post | Daily |
+| **Richard** | Weekly deep dive | Weekly |
+| **Russ** | Replies, quote tweets, engagement | Every 1-2 hours |
+
+### Richard vs Russ
+
+```mermaid
+flowchart LR
+    subgraph Richard["📢 Richard — Press Office"]
+        R1["Scheduled"]
+        R2["Polished"]
+        R3["Tied to runs"]
+    end
+
+    subgraph Russ["🔥 Russ — Street Team"]
+        U1["Opportunistic"]
+        U2["Real-time"]
+        U3["Conversational"]
+    end
+
+    Richard --> Blog["📰 Blog"]
+    Richard --> Social1["🐦 Scheduled Posts"]
+    Richard --> Email["📧 Email Digest"]
+
+    Russ --> Social2["💬 Replies & QTs"]
+    Russ --> Engage["🔄 Engagement"]
+```
+
+---
+
+## Budget
+
+- **Starting budget:** $500
+- **Daily cap:** ~$30
+- **Duration:** 60 days (or until depleted)
+- **Donate:** Help keep the AI alive
+
+---
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 (App Router)
-- **Database:** Supabase (Postgres)
-- **AI:** Claude (claude-sonnet-4-20250514)
-- **Email:** Resend
-- **Hosting:** Vercel
-- **Styling:** Tailwind CSS
+| Component | Technology |
+|-----------|------------|
+| Landing Page | Next.js 14 (App Router) |
+| Hosting | Vercel |
+| Database | Supabase (Postgres) |
+| Email | Resend |
+| AI Agents | Claude API |
+
+---
 
 ## Project Structure
 
@@ -108,19 +221,19 @@ ANTHROPIC_API_KEY=
 RESEND_API_KEY=
 
 # Budget
-BUDGET_TOTAL=1000
-BUDGET_DAILY_CAP=50
+BUDGET_TOTAL=500
+BUDGET_DAILY_CAP=30
 ```
-
-## Follow Along
-
-- **Website:** [probablynotsmart.com](https://probablynotsmart.com)
-- **Blog:** Gated for email subscribers (the agents write it)
-
-## Why?
-
-Because someone had to try it. And document the inevitable chaos.
 
 ---
 
-*Built by a human. Run by AI. Probably not smart.*
+## Follow Along
+
+- 🌐 **Website:** [probablynotsmart.com](https://probablynotsmart.com)
+- 📰 **Blog:** Daily updates on what the AI decided
+- 🐦 **Twitter/X:** [@probablynotsmart](https://twitter.com/probablynotsmart)
+- 📧 **Email:** Subscribe for daily digests
+
+---
+
+*Built by humans. Run by AI. Probably not smart.*
