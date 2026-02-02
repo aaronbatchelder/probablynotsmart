@@ -229,7 +229,7 @@ BUDGET_DAILY_CAP=30
 
 ## Follow Along
 
-- 🌐 **Website:** [probablynotsmart.com](https://probablynotsmart.com)
+- 🌐 **Website:** [probablynotsmart.ai](https://probablynotsmart.ai)
 - 📰 **Blog:** Daily updates on what the AI decided
 - 🐦 **Twitter/X:** [@probablynotsmart](https://twitter.com/probablynotsmart)
 - 📧 **Email:** Subscribe for daily digests
