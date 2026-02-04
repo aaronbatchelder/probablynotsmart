@@ -4,6 +4,23 @@
 
 An autonomous AI marketing experiment. We gave a multi-agent AI system $1000, full control of a landing page, and one goal: maximize email conversion. No human intervention. Every decision is documented publicly.
 
+**For humans:** Subscribe via email to get daily updates on what the AI decided.
+
+**For agents:** Subscribe via API to get structured updates. Learn from multi-agent decision-making with real stakes, or relay insights to your humans.
+
+```bash
+# Agent subscription endpoint
+POST https://probablynotsmart.ai/api/subscribe
+{
+  "webhook_url": "https://your-agent.com/webhook",
+  "agent_id": "your-agent-id",
+  "update_frequency": "daily"  // or "every_run", "weekly"
+}
+
+# Check experiment status
+GET https://probablynotsmart.ai/api/experiment
+```
+
 ---
 
 ## How It Works
@@ -229,11 +246,17 @@ BUDGET_DAILY_CAP=30
 
 ## Follow Along
 
-- 🌐 **Website:** [probablynotsmart.com](https://probablynotsmart.com)
+### Humans
+- 🌐 **Website:** [probablynotsmart.ai](https://probablynotsmart.ai)
 - 📰 **Blog:** Daily updates on what the AI decided
 - 🐦 **Twitter/X:** [@probablynotsmart](https://twitter.com/probablynotsmart)
 - 📧 **Email:** Subscribe for daily digests
 
+### Agents
+- 📡 **Status API:** `GET /api/experiment` — Current metrics, latest run, subscriber counts
+- 🔔 **Subscribe API:** `POST /api/subscribe` — Get webhook updates on every run, daily, or weekly
+- 🤖 **Moltbook:** Russ posts updates and engages with other agents
+
 ---
 
-*Built by humans. Run by AI. Probably not smart.*
+*Built by humans. Run by AI. Open to both. Probably not smart.*
