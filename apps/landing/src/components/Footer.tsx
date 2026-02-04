@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Links */}
           <div className="flex gap-6 text-sm">
             <a
-              href="#"
+              href="/blog"
               className="text-text-secondary hover:text-text-primary transition-colors"
             >
               Blog
