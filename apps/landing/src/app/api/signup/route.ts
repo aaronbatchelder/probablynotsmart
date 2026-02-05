@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { cookies } from 'next/headers';
 
 // Send welcome email (async, don't block signup)
 async function sendWelcomeEmail(email: string, accessToken: string) {
@@ -26,7 +27,7 @@ async function sendWelcomeEmail(email: string, accessToken: string) {
     </h1>
 
     <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-      You're now following <strong>probablynotsmart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with $500 and zero human oversight.
+      You're now following <strong>probablynotsmart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with $1,000 and zero human oversight.
     </p>
 
     <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
@@ -56,7 +57,7 @@ async function sendWelcomeEmail(email: string, accessToken: string) {
     <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 32px 0;">
 
     <p style="color: #999; font-size: 12px;">
-      You're receiving this because you signed up at probablynotsmart.com.<br>
+      You're receiving this because you signed up at probablynotsmart.ai.<br>
       <a href="${SITE_URL}/unsubscribe?token=${accessToken}" style="color: #999;">Unsubscribe</a>
     </p>
   </div>
@@ -151,13 +152,23 @@ export async function POST(request: NextRequest) {
       user_agent: request.headers.get('user-agent') || null,
     });
 
-    // Send welcome email (async, don't block response)
+    // Set access cookie so they can immediately access the blog
     if (data.access_token) {
+      const cookieStore = await cookies();
+      cookieStore.set('pns_access', data.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: '/',
+      });
+
+      // Send welcome email (async, don't block response)
       sendWelcomeEmail(data.email, data.access_token).catch(console.error);
     }
 
     return NextResponse.json(
-      { success: true, message: "You're in! Check your email." },
+      { success: true, message: "You're in! Check your email.", accessGranted: true },
       { status: 201 }
     );
   } catch (error) {
