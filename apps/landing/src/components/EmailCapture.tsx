@@ -45,14 +45,15 @@ export default function EmailCapture() {
 
   if (status === 'success') {
     return (
-      <div className="bg-bg-secondary rounded-lg p-6 max-w-md mx-auto">
-        <p className="text-text-primary font-medium">{message}</p>
+      <div className="bg-[#F7F5F2] border border-[#E5E5E5] rounded-xl p-6 max-w-lg mx-auto text-center">
+        <div className="text-3xl mb-2">🎉</div>
+        <p className="text-[#1A1A1A] font-medium">{message}</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+    <form onSubmit={handleSubmit} className="max-w-lg mx-auto">
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="email"
@@ -61,18 +62,18 @@ export default function EmailCapture() {
           placeholder="your@email.com"
           required
           disabled={status === 'loading'}
-          className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition-all disabled:opacity-50"
+          className="flex-1 px-4 py-3 bg-white border border-[#E5E5E5] rounded-xl text-[#1A1A1A] placeholder:text-[#999] text-base focus:outline-none focus:ring-2 focus:ring-[#FF5C35] focus:border-transparent transition-all disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="px-8 py-4 bg-accent-primary text-white font-medium rounded-lg hover:bg-accent-primary/90 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-[#FF5C35] text-white font-semibold rounded-xl hover:bg-[#E5502F] focus:outline-none focus:ring-2 focus:ring-[#FF5C35] focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
           {status === 'loading' ? 'Joining...' : 'Follow the Experiment'}
         </button>
       </div>
       {status === 'error' && (
-        <p className="mt-3 text-red-500 text-sm">{message}</p>
+        <p className="mt-3 text-red-500 text-sm text-center">{message}</p>
       )}
     </form>
   );
