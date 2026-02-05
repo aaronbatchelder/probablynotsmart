@@ -59,7 +59,7 @@ export default function BudgetTracker({ budget }: BudgetTrackerProps) {
           {/* Donate CTA */}
           <div className="mt-8 pt-6 border-t border-gray-100 text-center">
             <a
-              href="https://buymeacoffee.com/probablynotsmart"
+              href="https://buymeacoffee.com/aaronbatchelder"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#FFDD00] text-black font-medium rounded-lg hover:bg-[#FFCC00] transition-colors"
