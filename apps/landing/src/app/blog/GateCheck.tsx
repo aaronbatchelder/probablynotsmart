@@ -78,6 +78,11 @@ export default function GateCheck() {
   return (
     <main className="min-h-screen bg-[#FEFDFB] px-4 py-16">
       <div className="max-w-2xl mx-auto">
+        {/* Back link */}
+        <a href="/" className="text-[#FF5C35] hover:underline mb-8 inline-block">
+          ← Back to experiment
+        </a>
+
         {/* Header */}
         <div className="text-center mb-12">
           <div className="text-6xl mb-4">🔒</div>
