@@ -28,7 +28,7 @@ export default function Footer() {
               Blog
             </a>
             <a
-              href="https://twitter.com/probablynotsmart"
+              href="https://x.com/probablynotsmrt"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-secondary hover:text-text-primary transition-colors"
