@@ -35,28 +35,41 @@ export default function GateCheck() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/access', {
+      // Try to sign up (will also grant access if already subscribed)
+      const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, source: 'blog-gate' }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (res.status === 409) {
+        // Already subscribed - try to get access
+        const accessRes = await fetch('/api/auth/access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const accessData = await accessRes.json();
+
+        if (accessData.accessGranted) {
+          router.refresh();
+          return;
+        }
+      }
+
+      if (!res.ok && res.status !== 409) {
         setError(data.error || 'Something went wrong');
         return;
       }
 
-      if (data.accessGranted) {
-        // Cookie was set, refresh the page
-        router.refresh();
-      } else {
-        // Not a subscriber - show signup message
-        setSuccess(true);
-      }
+      // New signup or existing - refresh to show blog
+      setSuccess(true);
+      router.refresh();
     } catch {
-      setError('Failed to check access. Try again.');
+      setError('Failed to sign up. Try again.');
     } finally {
       setLoading(false);
     }
@@ -104,63 +117,52 @@ export default function GateCheck() {
           </div>
         </div>
 
-        {/* Access Form */}
+        {/* Signup Form */}
         <div className="bg-[#F7F5F2] border border-[#E5E5E5] rounded-xl p-6">
           {success ? (
             <div className="text-center">
+              <div className="text-4xl mb-3">🎉</div>
               <p className="text-[#1A1A1A] font-medium mb-2">
-                Not subscribed yet?
+                You're in!
               </p>
-              <p className="text-[#6B6B6B] mb-4">
-                Sign up on the main page to get access to all AI Lab Notes and daily email updates.
+              <p className="text-[#6B6B6B] text-sm">
+                Loading the AI Lab Notes...
               </p>
-              <a
-                href="/"
-                className="inline-block bg-[#FF5C35] text-white font-medium px-6 py-3 rounded-lg hover:bg-[#E5502F] transition-colors"
-              >
-                Join the Experiment
-              </a>
             </div>
           ) : (
             <>
-              <h3 className="font-bold text-[#1A1A1A] text-center mb-1">
-                Already subscribed?
+              <h3 className="font-bold text-[#1A1A1A] text-center text-xl mb-2">
+                Get full access
               </h3>
               <p className="text-[#6B6B6B] text-sm text-center mb-4">
-                Enter your email to access the full blog
+                Join the experiment to unlock all AI Lab Notes + daily email updates
               </p>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input
                   type="email"
-                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full px-4 py-3 border border-[#E5E5E5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5C35] focus:border-transparent bg-white"
+                  className="w-full px-4 py-3 border border-[#E5E5E5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF5C35] focus:border-transparent bg-white text-center"
                 />
 
                 {error && (
-                  <p className="text-red-600 text-sm">{error}</p>
+                  <p className="text-red-600 text-sm text-center">{error}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#1A1A1A] text-white font-medium px-6 py-3 rounded-lg hover:bg-[#333] transition-colors disabled:opacity-50"
+                  className="w-full bg-[#FF5C35] text-white font-medium px-6 py-3 rounded-lg hover:bg-[#E5502F] transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Checking...' : 'Access Blog'}
+                  {loading ? 'Joining...' : 'Join the Experiment'}
                 </button>
               </form>
 
-              <div className="mt-4 pt-4 border-t border-[#E5E5E5] text-center">
-                <p className="text-sm text-[#6B6B6B]">
-                  Not subscribed yet?{' '}
-                  <a href="/" className="text-[#FF5C35] hover:underline font-medium">
-                    Join the experiment →
-                  </a>
-                </p>
-              </div>
+              <p className="text-xs text-[#6B6B6B] text-center mt-4">
+                Free. Unsubscribe anytime. No spam, just AI chaos.
+              </p>
             </>
           )}
         </div>

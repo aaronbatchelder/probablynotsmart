@@ -3,6 +3,7 @@ import StatsBar from '@/components/StatsBar';
 import HowItWorks from '@/components/HowItWorks';
 import LatestActivity from '@/components/LatestActivity';
 import BudgetTracker from '@/components/BudgetTracker';
+import ForAgents from '@/components/ForAgents';
 import FinalCTA from '@/components/FinalCTA';
 import Footer from '@/components/Footer';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
@@ -28,6 +29,7 @@ export default async function Home() {
       <HowItWorks />
       <LatestActivity latestRun={latestRun} />
       <BudgetTracker budget={budgetStatus} />
+      <ForAgents />
       <FinalCTA />
       <Footer />
     </main>
