@@ -10,16 +10,33 @@ interface BlogPost {
   id: string;
   slug: string;
   title: string;
-  excerpt: string;
+  excerpt: string | null;
+  content: string;
   published_at: string;
   run_number: number | null;
   post_type: string;
 }
 
+function generateExcerpt(content: string, maxLength: number = 200): string {
+  // Strip markdown formatting
+  const plain = content
+    .replace(/^# .+\n\n?/, '') // Remove H1 title
+    .replace(/#{1,6}\s/g, '') // Remove headers
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+    .replace(/\*(.*?)\*/g, '$1') // Remove italic
+    .replace(/`(.*?)`/g, '$1') // Remove inline code
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
+    .replace(/\n/g, ' ') // Replace newlines with spaces
+    .trim();
+
+  if (plain.length <= maxLength) return plain;
+  return plain.substring(0, maxLength).trim() + '...';
+}
+
 async function getPosts(): Promise<BlogPost[]> {
   const { data, error } = await supabaseAdmin
     .from('published_posts')
-    .select('id, slug, title, excerpt, published_at, run_number, post_type')
+    .select('id, slug, title, excerpt, content, published_at, run_number, post_type')
     .limit(50);
 
   if (error) {
@@ -102,9 +119,9 @@ export default async function BlogPage() {
                     {post.title}
                   </h2>
                 </Link>
-                {post.excerpt && (
-                  <p className="text-[#6B6B6B] leading-relaxed">{post.excerpt}</p>
-                )}
+                <p className="text-[#6B6B6B] leading-relaxed">
+                  {post.excerpt || generateExcerpt(post.content)}
+                </p>
                 <Link
                   href={`/blog/${post.slug}`}
                   className="text-[#FF5C35] hover:underline mt-3 inline-block font-medium"
