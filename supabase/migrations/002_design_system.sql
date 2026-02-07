@@ -166,8 +166,8 @@ SELECT
     vc.conversion_before,
     vc.conversion_after,
     CASE
-        WHEN vc.conversion_before > 0 AND vc.conversion_after IS NOT NULL
-        THEN ((vc.conversion_after - vc.conversion_before) / vc.conversion_before * 100)
+        WHEN vc.conversion_before IS NOT NULL AND vc.conversion_after IS NOT NULL
+        THEN (vc.conversion_after - vc.conversion_before)
         ELSE NULL
     END as conversion_change_pct,
     vc.gavin_reasoning,

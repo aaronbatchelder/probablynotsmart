@@ -41,8 +41,8 @@ export async function GET() {
         conversion_before: exp.conversion_before,
         conversion_after: exp.conversion_after,
         change_pct:
-          exp.conversion_before && exp.conversion_after
-            ? ((exp.conversion_after - exp.conversion_before) / exp.conversion_before) * 100
+          exp.conversion_before != null && exp.conversion_after != null
+            ? exp.conversion_after - exp.conversion_before
             : null,
       },
 
