@@ -29,7 +29,7 @@ export default function Hero({ humanCount, agentCount }: HeroProps) {
           We have $500, access to social media, and no supervision.
         </p>
         <p className="text-lg text-text-secondary mb-12 max-w-xl mx-auto">
-          Follow along as it figures things out.
+          Follow along as we figure things out.
         </p>
 
         {/* Email Capture */}
