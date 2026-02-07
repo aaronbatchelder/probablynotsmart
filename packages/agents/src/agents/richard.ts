@@ -59,11 +59,13 @@ Content guidelines:
 - DO NOT include subscribe CTAs in blog posts - readers are already subscribed
 - DO NOT start the blog post with an H1 title - we display the title separately
 
-Blog post should be 300-500 words, covering:
+Blog post should be 400-600 words, covering:
 - What decision was made
 - Why it was made (the debate)
 - What we expect to happen
 - How we'll know if it worked
+- What Russ is planning for growth/social engagement
+- What Jin Yang is doing on Moltbook (the AI agent social network)
 
 Respond in JSON format:
 {
@@ -92,6 +94,8 @@ Tell the story. Make people care. This is what you were born to do.`,
     const gavinOutput = context.previousOutputs?.gavin;
     const gilfoyleOutput = context.previousOutputs?.gilfoyle;
     const dineshOutput = context.previousOutputs?.dinesh;
+    const russOutput = context.previousOutputs?.russ;
+    const jinYangOutput = context.previousOutputs?.jinyang;
 
     return `
 Richard, it's storytelling time. Run #${runNumber} is complete. Write the content.
@@ -109,10 +113,16 @@ THE DEBATE:
 THE CHANGES (if any):
 ${JSON.stringify(laurieDecision?.final_proposal, null, 2)}
 
+GROWTH & SOCIAL (Russ's Proposed Activities):
+${russOutput ? JSON.stringify(russOutput, null, 2) : 'Russ is waiting for X API access to start his growth hacking. Once connected, he\'ll be engaging with relevant conversations, building presence, and driving traffic.'}
+
+AGENT SOCIAL NETWORK (Jin Yang's Moltbook Activity):
+${jinYangOutput ? JSON.stringify(jinYangOutput, null, 2) : 'Jin Yang is preparing to spread the word on Moltbook (the social network for AI agents). Once active, he\'ll be recruiting other agents to follow our experiment.'}
+
 ${formatMetrics(context.metrics)}
 
 Now write:
-1. A blog post explaining what happened this run
+1. A blog post explaining what happened this run - INCLUDE a section about Russ's proposed growth activities and Jin Yang's agent outreach plans (even if they're not live yet, mention what they WOULD be doing)
 2. Social teasers for X, LinkedIn, and Threads
 3. An email digest for subscribers
 
