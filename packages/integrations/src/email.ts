@@ -327,3 +327,212 @@ export async function sendDailyDigestToAll(params: {
 
   return { sent, failed };
 }
+
+interface Run {
+  run_number: number;
+  completed_at: string;
+  laurie_decision: { decision: string; reasoning: string } | null;
+  changes_made: Array<{ element: string; from: string; to: string }> | null;
+  metrics_before: { conversion_rate_total: number } | null;
+  metrics_after: { conversion_rate_total: number } | null;
+  richard_output: {
+    blog_post: { title: string; slug: string };
+  } | null;
+}
+
+/**
+ * Get runs from the last 24 hours
+ */
+async function getRunsLast24Hours(): Promise<Run[]> {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from('runs')
+    .select('run_number, completed_at, laurie_decision, changes_made, metrics_before, metrics_after, richard_output')
+    .eq('status', 'completed')
+    .gte('completed_at', twentyFourHoursAgo)
+    .order('run_number', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch runs:', error);
+    return [];
+  }
+
+  return (data || []) as Run[];
+}
+
+/**
+ * Send 24-hour digest email covering all runs from the past day
+ */
+export async function send24HourDigest(): Promise<{ sent: number; failed: number; skipped: boolean }> {
+  console.log('[Email] Starting 24-hour digest...');
+
+  // Get runs from last 24 hours
+  const runs = await getRunsLast24Hours();
+
+  if (runs.length === 0) {
+    console.log('[Email] No runs in last 24 hours, skipping digest');
+    return { sent: 0, failed: 0, skipped: true };
+  }
+
+  console.log(`[Email] Found ${runs.length} runs in last 24 hours`);
+
+  // Build summary of all runs
+  const runSummaries = runs.map(run => {
+    const decision = run.laurie_decision?.decision || 'unknown';
+    const changes = run.changes_made || [];
+    const blogTitle = run.richard_output?.blog_post?.title || 'Run update';
+    const blogSlug = run.richard_output?.blog_post?.slug;
+
+    return {
+      runNumber: run.run_number,
+      decision,
+      changesCount: changes.length,
+      blogTitle,
+      blogSlug,
+      conversionBefore: run.metrics_before?.conversion_rate_total || 0,
+      conversionAfter: run.metrics_after?.conversion_rate_total || null,
+    };
+  });
+
+  // Get all active subscribers
+  const { data: subscribers, error } = await supabase
+    .from('signups')
+    .select('email, access_token, email_preferences')
+    .is('unsubscribed_at', null);
+
+  if (error || !subscribers) {
+    console.error('[Email] Failed to fetch subscribers:', error);
+    return { sent: 0, failed: 0, skipped: false };
+  }
+
+  console.log(`[Email] Sending to ${subscribers.length} subscribers`);
+
+  // Build the digest email HTML
+  const runsHtml = runSummaries.map(run => `
+    <div style="background: #F7F5F2; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="background: #1A1A1A; color: white; padding: 4px 12px; border-radius: 4px; font-family: monospace; font-size: 13px;">
+          Run #${run.runNumber}
+        </span>
+        <span style="color: #6B6B6B; font-size: 14px;">
+          ${run.decision === 'approve' ? '✅ Approved' : run.decision === 'reject' ? '❌ Rejected' : '⏸️ Hold'}
+        </span>
+      </div>
+      <p style="color: #1A1A1A; font-size: 16px; font-weight: 600; margin: 0 0 8px 0;">
+        ${run.blogTitle}
+      </p>
+      <p style="color: #6B6B6B; font-size: 14px; margin: 0;">
+        ${run.changesCount} change${run.changesCount !== 1 ? 's' : ''} made
+        ${run.conversionAfter !== null ? ` • Conversion: ${run.conversionBefore}% → ${run.conversionAfter}%` : ''}
+      </p>
+      ${run.blogSlug ? `
+        <a href="${SITE_URL}/blog/${run.blogSlug}" style="color: #FF5C35; font-size: 14px; text-decoration: none; display: inline-block; margin-top: 8px;">
+          Read full details →
+        </a>
+      ` : ''}
+    </div>
+  `).join('');
+
+  const totalChanges = runSummaries.reduce((sum, r) => sum + r.changesCount, 0);
+  const approvedRuns = runSummaries.filter(r => r.decision === 'approve').length;
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const subscriber of subscribers) {
+    // Check if subscriber wants daily digests
+    const prefs = subscriber.email_preferences || { daily_digest: true };
+    if (!prefs.daily_digest) continue;
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FEFDFB; margin: 0; padding: 40px 20px;">
+  <div style="max-width: 560px; margin: 0 auto;">
+    <p style="color: #6B6B6B; font-size: 14px; margin-bottom: 8px;">
+      Daily Digest • ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+    </p>
+
+    <h1 style="color: #1A1A1A; font-size: 24px; margin-bottom: 24px;">
+      ${runs.length} run${runs.length !== 1 ? 's' : ''} in the last 24 hours
+    </h1>
+
+    <div style="background: linear-gradient(135deg, #FF5C35 0%, #7C3AED 100%); border-radius: 8px; padding: 20px; margin-bottom: 24px; color: white;">
+      <div style="display: flex; justify-content: space-around; text-align: center;">
+        <div>
+          <p style="font-size: 28px; font-weight: bold; margin: 0;">${runs.length}</p>
+          <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Runs</p>
+        </div>
+        <div>
+          <p style="font-size: 28px; font-weight: bold; margin: 0;">${approvedRuns}</p>
+          <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Approved</p>
+        </div>
+        <div>
+          <p style="font-size: 28px; font-weight: bold; margin: 0;">${totalChanges}</p>
+          <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Changes</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color: #1A1A1A; font-size: 18px; margin-bottom: 16px;">Run Summaries</h2>
+
+    ${runsHtml}
+
+    <div style="text-align: center; margin-top: 32px;">
+      <a href="${SITE_URL}/blog" style="display: inline-block; background-color: #FF5C35; color: white; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600;">
+        View All Lab Notes →
+      </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 32px 0;">
+
+    <p style="color: #6B6B6B; font-size: 14px; text-align: center;">
+      Probably not smart. Definitely interesting.
+    </p>
+
+    <p style="color: #999; font-size: 12px; text-align: center;">
+      You're receiving this because you're following the probablynotsmart experiment.<br>
+      <a href="${SITE_URL}/unsubscribe?token=${subscriber.access_token}" style="color: #999;">Unsubscribe</a>
+    </p>
+  </div>
+</body>
+</html>
+`;
+
+    const subject = runs.length === 1
+      ? `Run #${runSummaries[0].runNumber}: ${runSummaries[0].blogTitle}`
+      : `Daily Digest: ${runs.length} runs, ${totalChanges} changes`;
+
+    const result = await sendEmail({
+      to: subscriber.email,
+      subject,
+      html,
+    });
+
+    await logEmail({
+      email: subscriber.email,
+      emailType: 'daily_digest',
+      subject,
+      status: result.success ? 'sent' : 'failed',
+      providerId: result.id,
+      errorMessage: result.error,
+    });
+
+    if (result.success) {
+      sent++;
+    } else {
+      failed++;
+    }
+
+    // Rate limit: wait 100ms between emails
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  console.log(`[Email] 24-hour digest complete: ${sent} sent, ${failed} failed`);
+  return { sent, failed, skipped: false };
+}

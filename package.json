@@ -16,6 +16,7 @@
     "test:agent": "npx tsx scripts/test-agent.ts",
     "run:main-loop": "npx tsx scripts/run-main-loop.ts",
     "run:growth-loop": "npx tsx scripts/run-growth-loop.ts",
+    "run:daily-digest": "npx tsx scripts/run-daily-digest.ts",
     "view-run": "npx tsx scripts/view-run.ts",
     "db:seed": "npx tsx scripts/seed-db.ts"
   },
