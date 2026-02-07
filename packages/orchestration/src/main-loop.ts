@@ -353,6 +353,23 @@ export async function runMainLoop(): Promise<RunResult> {
 
     if (laurieResult.output.decision === 'reject' || laurieResult.output.decision === 'hold') {
       console.log(`   Reasoning: ${laurieResult.output.reasoning}`);
+
+      // Richard still documents what happened - the debates are interesting!
+      console.log('\n📢 Richard documenting the rejected proposal...');
+      const richardResult = await richard(context);
+      context.previousOutputs!.richard = richardResult.output;
+      await updateRun(run.id, { richard_output: richardResult.output });
+      console.log(`   Blog: "${richardResult.output.blog_post.title}"`);
+
+      // Save blog post
+      await supabase.from('blog_posts').insert({
+        run_id: run.id,
+        post_type: 'run_update',
+        title: richardResult.output.blog_post.title,
+        slug: richardResult.output.blog_post.slug,
+        content: richardResult.output.blog_post.content,
+      });
+
       await updateRun(run.id, {
         status: 'completed',
         completed_at: new Date().toISOString(),
@@ -374,7 +391,24 @@ export async function runMainLoop(): Promise<RunResult> {
     console.log(`   Spend approved: $${monicaResult.output.spend_approved}`);
 
     if (monicaResult.output.recommendation === 'block') {
-      console.log('   ❌ Budget blocked');
+      console.log('   ❌ Budget blocked - but Richard will still document this');
+
+      // Richard should still write about what happened
+      console.log('\n📢 Richard writing about the blocked proposal...');
+      const richardResult = await richard(context);
+      context.previousOutputs!.richard = richardResult.output;
+      await updateRun(run.id, { richard_output: richardResult.output });
+      console.log(`   Blog: "${richardResult.output.blog_post.title}"`);
+
+      // Save blog post
+      await supabase.from('blog_posts').insert({
+        run_id: run.id,
+        post_type: 'run_update',
+        title: richardResult.output.blog_post.title,
+        slug: richardResult.output.blog_post.slug,
+        content: richardResult.output.blog_post.content,
+      });
+
       await updateRun(run.id, {
         status: 'completed',
         completed_at: new Date().toISOString(),
@@ -401,7 +435,24 @@ export async function runMainLoop(): Promise<RunResult> {
     console.log(`   Verdict: ${erlichResult.output.verdict}`);
 
     if (erlichResult.output.verdict === 'not_postable') {
-      console.log('   ❌ Content not postable');
+      console.log('   ❌ Content not postable - but Richard will still document this');
+
+      // Richard still documents what happened
+      console.log('\n📢 Richard documenting the content rejection...');
+      const richardResult = await richard(context);
+      context.previousOutputs!.richard = richardResult.output;
+      await updateRun(run.id, { richard_output: richardResult.output });
+      console.log(`   Blog: "${richardResult.output.blog_post.title}"`);
+
+      // Save blog post
+      await supabase.from('blog_posts').insert({
+        run_id: run.id,
+        post_type: 'run_update',
+        title: richardResult.output.blog_post.title,
+        slug: richardResult.output.blog_post.slug,
+        content: richardResult.output.blog_post.content,
+      });
+
       await updateRun(run.id, {
         status: 'completed',
         completed_at: new Date().toISOString(),
@@ -423,7 +474,24 @@ export async function runMainLoop(): Promise<RunResult> {
     console.log(`   Verdict: ${jaredResult.output.verdict}`);
 
     if (jaredResult.output.verdict === 'not_deployable') {
-      console.log('   ❌ Not deployable');
+      console.log('   ❌ Not deployable - but Richard will still document this');
+
+      // Richard still documents what happened
+      console.log('\n📢 Richard documenting the QA failure...');
+      const richardResult = await richard(context);
+      context.previousOutputs!.richard = richardResult.output;
+      await updateRun(run.id, { richard_output: richardResult.output });
+      console.log(`   Blog: "${richardResult.output.blog_post.title}"`);
+
+      // Save blog post
+      await supabase.from('blog_posts').insert({
+        run_id: run.id,
+        post_type: 'run_update',
+        title: richardResult.output.blog_post.title,
+        slug: richardResult.output.blog_post.slug,
+        content: richardResult.output.blog_post.content,
+      });
+
       await updateRun(run.id, {
         status: 'completed',
         completed_at: new Date().toISOString(),
