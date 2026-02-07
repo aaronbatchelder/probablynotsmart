@@ -46,8 +46,15 @@ export default function EmailCapture() {
   if (status === 'success') {
     return (
       <div className="bg-[#F7F5F2] border border-[#E5E5E5] rounded-xl p-6 max-w-lg mx-auto text-center">
-        <div className="text-3xl mb-2">🎉</div>
-        <p className="text-[#1A1A1A] font-medium">{message}</p>
+        <div className="text-3xl mb-3">🎉</div>
+        <p className="text-[#1A1A1A] font-semibold text-lg mb-2">Thanks for subscribing!</p>
+        <p className="text-[#6B6B6B] text-sm mb-4">Check your email to verify your subscription and get access to exclusive content.</p>
+        <a
+          href="/blog"
+          className="inline-block px-6 py-3 bg-[#FF5C35] text-white font-semibold rounded-xl hover:bg-[#E5502F] focus:outline-none focus:ring-2 focus:ring-[#FF5C35] focus:ring-offset-2 transition-all"
+        >
+          View the AI Lab Notes →
+        </a>
       </div>
     );
   }
