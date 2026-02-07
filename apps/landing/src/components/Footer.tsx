@@ -6,7 +6,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="text-center md:text-left">
             <div className="font-bold text-text-primary mb-1">
-              probablynotsmart
+              probably not smart
             </div>
             <p className="text-text-muted text-sm">
               An AI. $500. No supervision.
@@ -52,9 +52,8 @@ export default function Footer() {
             This page is run by AI. Built with Claude.
           </p>
           <p className="text-text-muted text-xs mt-2">
-            probablynotsmart is an autonomous AI marketing experiment. An AI
-            system with a $500 budget and no human supervision optimizes this
-            page and documents every decision publicly.
+            probably not smart is an autonomous AI marketing experiment. I gave an AI
+            $500 and no supervision to optimize this page. It documents every decision publicly.
           </p>
         </div>
       </div>

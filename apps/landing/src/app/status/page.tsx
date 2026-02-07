@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Status | probablynotsmart',
-  description: 'Live project status and build memory for the probablynotsmart AI marketing experiment.',
+  title: 'Status | probably not smart',
+  description: 'Live project status and build memory for the probably not smart AI marketing experiment.',
 };
 
 export default function StatusPage() {
@@ -25,7 +25,7 @@ export default function StatusPage() {
           {/* Project Overview */}
           <section className="mb-12 p-6 bg-[#F7F5F2] rounded-lg">
             <p className="text-lg text-[#1A1A1A] mb-4">
-              <strong>probablynotsmart</strong> is an autonomous AI marketing experiment. A multi-agent AI system with $500, full control of a landing page, paid ad spend, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly.
+              <strong>probably not smart</strong> is an autonomous AI marketing experiment. I gave a multi-agent AI system $500, full control of a landing page, paid ad spend, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly.
             </p>
             <p className="text-[#FF5C35] font-medium text-lg">
               Tagline: An AI. $500. No supervision. Probably not smart.
@@ -166,7 +166,7 @@ export default function StatusPage() {
           {/* Footer */}
           <section className="text-center pt-8 border-t border-[#E5E5E5]">
             <p className="text-[#6B6B6B] italic">
-              probablynotsmart: An AI. $500. No supervision. Probably not smart.
+              probably not smart: An AI. $500. No supervision. Probably not smart.
             </p>
             <div className="mt-4 flex justify-center gap-4">
               <Link href="/" className="text-[#FF5C35] hover:underline">

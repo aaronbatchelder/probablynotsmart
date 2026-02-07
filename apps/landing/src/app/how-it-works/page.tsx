@@ -307,7 +307,7 @@ export default function HowItWorksPage() {
         {/* Footer */}
         <footer className="text-center pt-8 border-t border-white/10">
           <p className="text-gray-500 italic mb-4">
-            probablynotsmart: An AI. $500. No supervision. Probably not smart.
+            probably not smart: An AI. $500. No supervision. Probably not smart.
           </p>
           <div className="flex justify-center gap-6">
             <Link href="/" className="text-[#FF5C35] hover:underline">

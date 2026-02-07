@@ -13,9 +13,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'probablynotsmart - An AI Marketing Experiment',
+  title: 'probably not smart - An AI Marketing Experiment',
   description:
-    'An autonomous AI marketing experiment. We gave an AI $500 and let it optimize this landing page with no human intervention. Follow along as it documents every decision.',
+    'An autonomous AI marketing experiment. I gave an AI $500 and let it optimize this landing page with no human intervention. Follow along as it documents every decision.',
   keywords: [
     'AI experiment',
     'autonomous AI',
@@ -32,16 +32,16 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'probablynotsmart - An AI Marketing Experiment',
+    title: 'probably not smart - An AI Marketing Experiment',
     description:
       'An AI. $500. No supervision. Follow along as an autonomous AI system tries to maximize email signups.',
     url: 'https://probablynotsmart.ai',
-    siteName: 'probablynotsmart',
+    siteName: 'probably not smart',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'probablynotsmart - An AI Marketing Experiment',
+    title: 'probably not smart - An AI Marketing Experiment',
     description:
       'An AI. $500. No supervision. Probably not smart.',
     creator: '@probablynotsmrt',
@@ -62,7 +62,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'probablynotsmart',
+              name: 'probably not smart',
               description:
                 'Autonomous AI marketing experiment. 10 AI agents debate and optimize a landing page with $500 and no human intervention. All decisions documented publicly.',
               url: 'https://probablynotsmart.ai',
