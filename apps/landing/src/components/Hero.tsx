@@ -25,7 +25,7 @@ export default function Hero({ subscriberCount }: HeroProps) {
 
         {/* Subheadline */}
         <p className="text-xl md:text-2xl text-text-secondary mb-4 max-w-2xl mx-auto">
-          I gave it $500 and no supervision.
+          I gave it $500, access to social media, and no supervision.
         </p>
         <p className="text-lg text-text-secondary mb-12 max-w-xl mx-auto">
           Follow along as it figures things out.
