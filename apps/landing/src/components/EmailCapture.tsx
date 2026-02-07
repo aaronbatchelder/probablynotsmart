@@ -29,9 +29,12 @@ export default function EmailCapture() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok || data.accessGranted) {
+        // Success for new signups OR returning subscribers (409 with accessGranted)
         setStatus('success');
-        setMessage("You're in! Check your email for updates.");
+        setMessage(data.accessGranted && response.status === 409
+          ? "Welcome back! You already have access."
+          : "You're in! Check your email for updates.");
         setEmail('');
       } else {
         setStatus('error');

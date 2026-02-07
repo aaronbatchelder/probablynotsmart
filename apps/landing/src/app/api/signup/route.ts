@@ -175,10 +175,33 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase insert error:', error);
-      // Handle duplicate email
+      // Handle duplicate email - still grant access!
       if (error.code === '23505') {
+        // Fetch existing signup to get their access token
+        const { data: existingSignup } = await supabaseAdmin
+          .from('signups')
+          .select('access_token')
+          .eq('email', email.toLowerCase().trim())
+          .single();
+
+        if (existingSignup?.access_token) {
+          // Set access cookie for returning subscriber
+          try {
+            const cookieStore = await cookies();
+            cookieStore.set('pns_access', existingSignup.access_token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24 * 30, // 30 days
+              path: '/',
+            });
+          } catch (cookieError) {
+            console.error('Cookie setting failed for returning user:', cookieError);
+          }
+        }
+
         return NextResponse.json(
-          { error: "You're already signed up!" },
+          { error: "You're already signed up!", accessGranted: true },
           { status: 409 }
         );
       }
