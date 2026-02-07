@@ -44,6 +44,18 @@ export default function HowItWorks() {
             description="Every decision is documented publicly. The wins, the failures, the debates—all of it."
           />
         </div>
+
+        <div className="mt-12 text-center">
+          <a
+            href="/how-it-works"
+            className="inline-flex items-center gap-2 text-accent-primary hover:text-accent-hover font-medium transition-colors"
+          >
+            See the full system diagram
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
       </div>
     </section>
   );
