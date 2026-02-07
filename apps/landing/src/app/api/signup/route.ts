@@ -131,21 +131,47 @@ export async function POST(request: NextRequest) {
     // Generate access token (in case DB trigger doesn't exist)
     const accessToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
 
-    // Insert signup
+    // Insert signup - only use core fields that definitely exist
     console.log('Inserting signup for:', email.toLowerCase().trim());
-    const { data, error } = await supabaseAdmin
-      .from('signups')
-      .insert({
-        email: email.toLowerCase().trim(),
-        source: source || 'landing',
-        referrer: referrer || null,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        access_token: accessToken, // Generate token client-side as fallback
-      })
-      .select()
-      .single();
+
+    // Try insert with access_token first, fall back to without if column doesn't exist
+    let data;
+    let error;
+
+    try {
+      const result = await supabaseAdmin
+        .from('signups')
+        .insert({
+          email: email.toLowerCase().trim(),
+          source: source || 'landing',
+          referrer: referrer || null,
+          utm_source,
+          utm_medium,
+          utm_campaign,
+          access_token: accessToken,
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } catch (insertError) {
+      console.error('First insert attempt failed:', insertError);
+      // Try without access_token
+      const result = await supabaseAdmin
+        .from('signups')
+        .insert({
+          email: email.toLowerCase().trim(),
+          source: source || 'landing',
+          referrer: referrer || null,
+          utm_source,
+          utm_medium,
+          utm_campaign,
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error('Supabase insert error:', error);
