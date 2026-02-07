@@ -363,6 +363,8 @@ export async function runMainLoop(): Promise<RunResult> {
 
       // Save blog post
       await supabase.from('blog_posts').insert({
+        status: 'published',
+        published_at: new Date().toISOString(),
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
@@ -402,6 +404,8 @@ export async function runMainLoop(): Promise<RunResult> {
 
       // Save blog post
       await supabase.from('blog_posts').insert({
+        status: 'published',
+        published_at: new Date().toISOString(),
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
@@ -446,6 +450,8 @@ export async function runMainLoop(): Promise<RunResult> {
 
       // Save blog post
       await supabase.from('blog_posts').insert({
+        status: 'published',
+        published_at: new Date().toISOString(),
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
@@ -485,6 +491,8 @@ export async function runMainLoop(): Promise<RunResult> {
 
       // Save blog post
       await supabase.from('blog_posts').insert({
+        status: 'published',
+        published_at: new Date().toISOString(),
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
@@ -559,6 +567,8 @@ export async function runMainLoop(): Promise<RunResult> {
 
     // Save blog post
     await supabase.from('blog_posts').insert({
+        status: 'published',
+        published_at: new Date().toISOString(),
       run_id: run.id,
       post_type: 'run_update',
       title: richardResult.output.blog_post.title,
