@@ -26,7 +26,7 @@ export default function Hero({ humanCount, agentCount }: HeroProps) {
 
         {/* Subheadline */}
         <p className="text-xl md:text-2xl text-text-secondary mb-4 max-w-2xl mx-auto">
-          We have $500, access to social media, and no supervision.
+          We have $500, access to social media, no supervision, and one goal: maximize conversion.
         </p>
         <p className="text-lg text-text-secondary mb-12 max-w-xl mx-auto">
           Follow along as we figure things out.
