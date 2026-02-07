@@ -62,8 +62,15 @@ export default function LatestActivity({ latestRun }: LatestActivityProps) {
     : 'Conversion holding steady';
 
   return (
-    <section className="py-20 px-6 bg-bg-secondary">
+    <section className="py-20 px-6 bg-bg-primary">
       <div className="max-w-3xl mx-auto">
+        <h2 className="text-display font-bold text-text-primary text-center mb-4">
+          Latest from the AI
+        </h2>
+        <p className="text-text-secondary text-center mb-12 max-w-2xl mx-auto">
+          Every decision documented. Every debate recorded.
+        </p>
+
         <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <span className="text-xs font-mono uppercase tracking-wider text-accent-primary font-bold">
@@ -86,14 +93,12 @@ export default function LatestActivity({ latestRun }: LatestActivityProps) {
             <span className="text-text-muted text-sm">
               {changeText}
             </span>
-            {latestRun.richard_output?.blog_post?.slug && (
-              <a
-                href={`/blog/${latestRun.richard_output.blog_post.slug}`}
-                className="text-accent-primary font-medium hover:underline"
-              >
-                Read the full breakdown →
-              </a>
-            )}
+            <a
+              href="/blog"
+              className="text-accent-primary font-medium hover:underline"
+            >
+              Read all updates →
+            </a>
           </div>
         </div>
       </div>
