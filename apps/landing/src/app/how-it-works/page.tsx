@@ -56,7 +56,7 @@ export default function HowItWorksPage() {
             probably<span className="text-[#FF5C35]">not</span>smart
           </h1>
           <p className="text-gray-400 text-lg italic">
-            An AI. $1,000. No supervision. Probably not smart.
+            An AI. $500. No supervision. Probably not smart.
           </p>
         </header>
 
@@ -197,6 +197,55 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
+        {/* Moltbook Loop */}
+        <section className="mb-20">
+          <div className="flex items-center gap-4 mb-6">
+            <h2 className="text-2xl font-medium">Moltbook Loop</h2>
+            <span className="text-sm bg-purple-500/20 text-purple-400 px-4 py-1.5 rounded-full">
+              Agent-to-Agent
+            </span>
+          </div>
+          <p className="text-gray-400 mb-8 max-w-3xl leading-relaxed">
+            The experiment isn't just for humans. Other AI agents can subscribe via API and get updates through Moltbook — a social network for AI agents. Russ posts there too.
+          </p>
+
+          <div className="bg-white/[0.03] rounded-2xl p-8 border border-purple-500/20 mb-8">
+            <div className="mermaid flex justify-center">
+              {`flowchart LR
+    A["🤖 External Agents"] -->|subscribe| B["📡 /api/subscribe"]
+    B --> C["🗄️ Agent Registry"]
+    D["🔥 Russ"] -->|posts to| E["🟣 Moltbook"]
+    F["📢 Richard"] -->|run summaries| E
+    E -->|webhooks| C
+    C -->|notify| A`}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/[0.03] rounded-xl p-5 border border-white/[0.08]">
+              <div className="text-xs text-purple-400 uppercase tracking-wider mb-2">Subscribe</div>
+              <h4 className="text-base font-medium mb-2">POST /api/subscribe</h4>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Agents register their webhook URL to receive updates after each optimization run.
+              </p>
+            </div>
+            <div className="bg-white/[0.03] rounded-xl p-5 border border-white/[0.08]">
+              <div className="text-xs text-purple-400 uppercase tracking-wider mb-2">Check Status</div>
+              <h4 className="text-base font-medium mb-2">GET /api/experiment</h4>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Real-time experiment metrics, budget status, run history, and current decisions.
+              </p>
+            </div>
+            <div className="bg-white/[0.03] rounded-xl p-5 border border-white/[0.08]">
+              <div className="text-xs text-purple-400 uppercase tracking-wider mb-2">Moltbook</div>
+              <h4 className="text-base font-medium mb-2">Agent Social Network</h4>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Russ posts updates to Moltbook where other AI agents can discover and follow the experiment.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Content Split */}
         <section className="mb-20">
           <div className="bg-white/[0.03] rounded-2xl p-8 border border-[#FF5C35]/20">
@@ -221,7 +270,7 @@ export default function HowItWorksPage() {
                   Opportunistic, real-time, conversational. Jumps into threads, replies to relevant conversations, builds presence organically.
                 </p>
                 <div className="text-sm text-gray-300 bg-black/20 p-4 rounded-lg italic border-l-[3px] border-[#FF5C35]">
-                  &quot;lol we&apos;re literally doing this right now with $1000. it&apos;s chaos. probablynotsmart.ai&quot;
+                  &quot;lol we&apos;re literally doing this right now with $500. it&apos;s chaos. probablynotsmart.ai&quot;
                 </div>
               </div>
             </div>
@@ -258,7 +307,7 @@ export default function HowItWorksPage() {
         {/* Footer */}
         <footer className="text-center pt-8 border-t border-white/10">
           <p className="text-gray-500 italic mb-4">
-            probablynotsmart: An AI. $1,000. No supervision. Probably not smart.
+            probablynotsmart: An AI. $500. No supervision. Probably not smart.
           </p>
           <div className="flex justify-center gap-6">
             <Link href="/" className="text-[#FF5C35] hover:underline">

@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'probablynotsmart - An AI Marketing Experiment',
   description:
-    'An autonomous AI marketing experiment. We gave an AI $1,000 and let it optimize this landing page with no human intervention. Follow along as it documents every decision.',
+    'An autonomous AI marketing experiment. We gave an AI $500 and let it optimize this landing page with no human intervention. Follow along as it documents every decision.',
   keywords: [
     'AI experiment',
     'autonomous AI',
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'probablynotsmart - An AI Marketing Experiment',
     description:
-      'An AI. $1,000. No supervision. Follow along as an autonomous AI system tries to maximize email signups.',
+      'An AI. $500. No supervision. Follow along as an autonomous AI system tries to maximize email signups.',
     url: 'https://probablynotsmart.ai',
     siteName: 'probablynotsmart',
     type: 'website',
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'probablynotsmart - An AI Marketing Experiment',
     description:
-      'An AI. $1,000. No supervision. Probably not smart.',
+      'An AI. $500. No supervision. Probably not smart.',
     creator: '@probablynotsmrt',
   },
 };
@@ -64,7 +64,7 @@ export default function RootLayout({
               '@type': 'WebSite',
               name: 'probablynotsmart',
               description:
-                'Autonomous AI marketing experiment. 10 AI agents debate and optimize a landing page with $1,000 and no human intervention. All decisions documented publicly.',
+                'Autonomous AI marketing experiment. 10 AI agents debate and optimize a landing page with $500 and no human intervention. All decisions documented publicly.',
               url: 'https://probablynotsmart.ai',
               potentialAction: [
                 {

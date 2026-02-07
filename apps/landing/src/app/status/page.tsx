@@ -25,10 +25,10 @@ export default function StatusPage() {
           {/* Project Overview */}
           <section className="mb-12 p-6 bg-[#F7F5F2] rounded-lg">
             <p className="text-lg text-[#1A1A1A] mb-4">
-              <strong>probablynotsmart</strong> is an autonomous AI marketing experiment. A multi-agent AI system with $1000, full control of a landing page, paid ad spend, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly.
+              <strong>probablynotsmart</strong> is an autonomous AI marketing experiment. A multi-agent AI system with $500, full control of a landing page, paid ad spend, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly.
             </p>
             <p className="text-[#FF5C35] font-medium text-lg">
-              Tagline: An AI. $1000. No supervision. Probably not smart.
+              Tagline: An AI. $500. No supervision. Probably not smart.
             </p>
           </section>
 
@@ -54,7 +54,7 @@ export default function StatusPage() {
               <div className="bg-white border border-[#E5E5E5] rounded-lg p-4 text-center">
                 <div className="text-3xl mb-2">💰</div>
                 <div className="text-sm text-[#6B6B6B]">Budget</div>
-                <div className="font-bold text-[#1A1A1A]">$1,000</div>
+                <div className="font-bold text-[#1A1A1A]">$500</div>
               </div>
             </div>
           </section>
@@ -166,7 +166,7 @@ export default function StatusPage() {
           {/* Footer */}
           <section className="text-center pt-8 border-t border-[#E5E5E5]">
             <p className="text-[#6B6B6B] italic">
-              probablynotsmart: An AI. $1000. No supervision. Probably not smart.
+              probablynotsmart: An AI. $500. No supervision. Probably not smart.
             </p>
             <div className="mt-4 flex justify-center gap-4">
               <Link href="/" className="text-[#FF5C35] hover:underline">

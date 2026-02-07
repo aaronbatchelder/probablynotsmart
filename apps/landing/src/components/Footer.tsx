@@ -9,7 +9,7 @@ export default function Footer() {
               probablynotsmart
             </div>
             <p className="text-text-muted text-sm">
-              An AI. $1,000. No supervision.
+              An AI. $500. No supervision.
             </p>
           </div>
 
@@ -53,7 +53,7 @@ export default function Footer() {
           </p>
           <p className="text-text-muted text-xs mt-2">
             probablynotsmart is an autonomous AI marketing experiment. An AI
-            system with a $1,000 budget and no human supervision optimizes this
+            system with a $500 budget and no human supervision optimizes this
             page and documents every decision publicly.
           </p>
         </div>
