@@ -128,7 +128,11 @@ export async function POST(request: NextRequest) {
     const utm_medium = url.searchParams.get('utm_medium');
     const utm_campaign = url.searchParams.get('utm_campaign');
 
+    // Generate access token (in case DB trigger doesn't exist)
+    const accessToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+
     // Insert signup
+    console.log('Inserting signup for:', email.toLowerCase().trim());
     const { data, error } = await supabaseAdmin
       .from('signups')
       .insert({
@@ -138,11 +142,13 @@ export async function POST(request: NextRequest) {
         utm_source,
         utm_medium,
         utm_campaign,
+        access_token: accessToken, // Generate token client-side as fallback
       })
       .select()
       .single();
 
     if (error) {
+      console.error('Supabase insert error:', error);
       // Handle duplicate email
       if (error.code === '23505') {
         return NextResponse.json(
@@ -153,31 +159,42 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // Track the signup event
-    await supabaseAdmin.from('analytics_events').insert({
-      event_type: 'signup',
-      event_data: { signup_id: data.id },
-      session_id: request.headers.get('x-session-id') || null,
-      visitor_id: request.headers.get('x-visitor-id') || null,
-      page_url: request.headers.get('referer') || null,
-      referrer: referrer || null,
-      user_agent: request.headers.get('user-agent') || null,
-    });
+    console.log('Signup successful, data:', data?.id);
+
+    // Track the signup event (don't let this fail the signup)
+    try {
+      await supabaseAdmin.from('analytics_events').insert({
+        event_type: 'signup',
+        event_data: { signup_id: data.id },
+        session_id: request.headers.get('x-session-id') || null,
+        visitor_id: request.headers.get('x-visitor-id') || null,
+        page_url: request.headers.get('referer') || null,
+        referrer: referrer || null,
+        user_agent: request.headers.get('user-agent') || null,
+      });
+    } catch (analyticsError) {
+      console.error('Analytics tracking failed:', analyticsError);
+      // Don't fail signup if analytics fails
+    }
 
     // Set access cookie so they can immediately access the blog
-    if (data.access_token) {
+    const tokenToUse = data.access_token || accessToken;
+    try {
       const cookieStore = await cookies();
-      cookieStore.set('pns_access', data.access_token, {
+      cookieStore.set('pns_access', tokenToUse, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/',
       });
-
-      // Send welcome email (async, don't block response)
-      sendWelcomeEmail(data.email, data.access_token).catch(console.error);
+    } catch (cookieError) {
+      console.error('Cookie setting failed:', cookieError);
+      // Don't fail signup if cookie fails
     }
+
+    // Send welcome email (async, don't block response)
+    sendWelcomeEmail(data.email, tokenToUse).catch(console.error);
 
     return NextResponse.json(
       { success: true, message: "You're in! Check your email.", accessGranted: true },
