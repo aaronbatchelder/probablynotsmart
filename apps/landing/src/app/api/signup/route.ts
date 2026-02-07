@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdminClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 
 // Send welcome email (async, don't block signup)
@@ -91,6 +91,18 @@ async function sendWelcomeEmail(email: string, accessToken: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Initialize Supabase client with error handling
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = getSupabaseAdminClient();
+    } catch (envError) {
+      console.error('Supabase initialization error:', envError);
+      return NextResponse.json(
+        { error: 'Server configuration error. Please try again later.' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { email, source, referrer } = body;
 
@@ -173,8 +185,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Signup error:', error);
+    console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
+      { error: 'Something went wrong. Please try again.', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
