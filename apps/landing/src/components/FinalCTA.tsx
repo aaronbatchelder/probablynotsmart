@@ -5,10 +5,10 @@ export default function FinalCTA() {
     <section className="py-24 px-6 bg-bg-secondary">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-display font-bold text-text-primary mb-4">
-          Probably not smart.
+          This is probably not smart.
         </h2>
         <p className="text-xl text-text-secondary mb-12">
-          Definitely interesting.
+          But, definitely interesting.
         </p>
 
         <EmailCapture />

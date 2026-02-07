@@ -14,7 +14,7 @@ export default function Hero({ subscriberCount }: HeroProps) {
         {/* Logo/Brand */}
         <div className="mb-8">
           <span className="text-text-muted text-sm tracking-widest uppercase">
-            probably not smart
+            this is probably not smart
           </span>
         </div>
 
