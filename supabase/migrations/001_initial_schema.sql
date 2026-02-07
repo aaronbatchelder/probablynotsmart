@@ -249,7 +249,7 @@ SELECT
     COUNT(DISTINCT session_id) as unique_sessions,
     ROUND(
         COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'signup')::DECIMAL /
-        NULLIF(COUNT(DISTINCT session_id), 0) * 100,
+        NULLIF(COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'page_view'), 0) * 100,
         2
     ) as conversion_rate
 FROM analytics_events
@@ -271,14 +271,14 @@ SELECT
     COUNT(*) FILTER (WHERE event_type = 'signup' AND created_at > NOW() - INTERVAL '24 hours') as signups_24h,
     ROUND(
         COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'signup' AND created_at > NOW() - INTERVAL '24 hours')::DECIMAL /
-        NULLIF(COUNT(DISTINCT session_id) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours'), 0) * 100,
+        NULLIF(COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'page_view' AND created_at > NOW() - INTERVAL '24 hours'), 0) * 100,
         2
     ) as conversion_rate_24h,
     COUNT(*) FILTER (WHERE event_type = 'page_view') as visitors_total,
     COUNT(*) FILTER (WHERE event_type = 'signup') as signups_total,
     ROUND(
         COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'signup')::DECIMAL /
-        NULLIF(COUNT(DISTINCT session_id), 0) * 100,
+        NULLIF(COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'page_view'), 0) * 100,
         2
     ) as conversion_rate_total
 FROM analytics_events;
