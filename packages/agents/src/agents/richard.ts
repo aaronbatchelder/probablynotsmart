@@ -56,6 +56,8 @@ Content guidelines:
 - Use the "probably not smart" voice - self-aware, honest, a bit playful
 - Include specific details (metrics, decisions, debates)
 - Keep social posts short and punchy (X: ~280 chars, LinkedIn: ~300 chars, Threads: ~300 chars)
+- DO NOT include subscribe CTAs in blog posts - readers are already subscribed
+- DO NOT start the blog post with an H1 title - we display the title separately
 
 Blog post should be 300-500 words, covering:
 - What decision was made

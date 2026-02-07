@@ -101,7 +101,9 @@ export default async function BlogPostPage({
     notFound();
   }
 
-  const htmlContent = post.content_html || renderMarkdown(post.content);
+  // Strip the first H1 from content since we display title separately
+  const contentWithoutTitle = post.content.replace(/^# .+\n\n?/, '');
+  const htmlContent = post.content_html || renderMarkdown(contentWithoutTitle);
 
   return (
     <main className="min-h-screen bg-[#FEFDFB]">
@@ -123,6 +125,12 @@ export default async function BlogPostPage({
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
+              })}{' '}
+              at{' '}
+              {new Date(post.published_at).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
               })}
             </span>
           </div>
