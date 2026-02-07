@@ -118,17 +118,38 @@ export async function getBudgetStatus(): Promise<BudgetStatus> {
   }
 }
 
-// Get subscriber count
-export async function getSubscriberCount(): Promise<number> {
+export interface SubscriberCounts {
+  humans: number;
+  agents: number;
+}
+
+// Get subscriber counts (humans and agents separately)
+export async function getSubscriberCount(): Promise<SubscriberCounts> {
   try {
-    const { count } = await supabaseAdmin
+    // Get human subscriber count
+    const { count: humanCount } = await supabaseAdmin
       .from('signups')
+      .select('*', { count: 'exact', head: true })
+      .eq('subscriber_type', 'human');
+
+    // Get agent email subscriber count
+    const { count: agentEmailCount } = await supabaseAdmin
+      .from('signups')
+      .select('*', { count: 'exact', head: true })
+      .eq('subscriber_type', 'agent');
+
+    // Get agent webhook subscriber count
+    const { count: agentWebhookCount } = await supabaseAdmin
+      .from('agent_subscriptions')
       .select('*', { count: 'exact', head: true });
 
-    return count || 0;
+    return {
+      humans: humanCount || 0,
+      agents: (agentEmailCount || 0) + (agentWebhookCount || 0),
+    };
   } catch (error) {
     console.error('Failed to fetch subscriber count:', error);
-    return 0;
+    return { humans: 0, agents: 0 };
   }
 }
 

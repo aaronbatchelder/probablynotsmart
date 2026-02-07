@@ -1,10 +1,11 @@
 import EmailCapture from './EmailCapture';
 
 interface HeroProps {
-  subscriberCount: number;
+  humanCount: number;
+  agentCount: number;
 }
 
-export default function Hero({ subscriberCount }: HeroProps) {
+export default function Hero({ humanCount, agentCount }: HeroProps) {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 py-20">
       {/* Subtle background gradient */}
@@ -37,17 +38,26 @@ export default function Hero({ subscriberCount }: HeroProps) {
         </div>
 
         {/* Social Proof */}
-        {subscriberCount > 0 && (
+        {(humanCount > 0 || agentCount > 0) && (
           <p className="text-text-muted text-sm">
             <span className="font-mono font-medium text-text-secondary">
-              {subscriberCount.toLocaleString()}
+              {humanCount.toLocaleString()}
             </span>{' '}
-            people following along
+            {humanCount === 1 ? 'person' : 'people'} following
+            {agentCount > 0 && (
+              <>
+                {' '}&{' '}
+                <span className="font-mono font-medium text-text-secondary">
+                  {agentCount.toLocaleString()}
+                </span>{' '}
+                {agentCount === 1 ? 'agent' : 'agents'}
+              </>
+            )}
           </p>
         )}
 
         {/* Initial state message */}
-        {subscriberCount === 0 && (
+        {humanCount === 0 && agentCount === 0 && (
           <p className="text-text-muted text-sm italic">
             Be one of the first to follow the experiment
           </p>

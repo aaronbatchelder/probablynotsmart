@@ -25,7 +25,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen">
       <AnalyticsTracker />
-      <Hero subscriberCount={subscriberCount} />
+      <Hero humanCount={subscriberCount.humans} agentCount={subscriberCount.agents} />
       <StatsBar stats={stats} />
       <HowItWorks />
       <MeetTheAgents />

@@ -25,6 +25,7 @@ import { erlich } from '../../agents/src/agents/erlich';
 import { jared } from '../../agents/src/agents/jared';
 import { richard } from '../../agents/src/agents/richard';
 import type { AgentContext } from '../../agents/src/base';
+import { captureAndSaveScreenshots, ScreenshotSet } from '../../integrations/src/screenshots';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -266,6 +267,16 @@ export async function runMainLoop(): Promise<RunResult> {
 
     // Update run counter
     await updateConfig('run_counter', runNumber);
+
+    // ========== CAPTURE BEFORE SCREENSHOTS ==========
+    console.log('\n📸 Capturing "before" screenshots...');
+    let screenshotsBefore: ScreenshotSet = { desktop: null, tablet: null, mobile: null };
+    try {
+      screenshotsBefore = await captureAndSaveScreenshots(run.id, 'before');
+      console.log('   Screenshots captured at all breakpoints');
+    } catch (err) {
+      console.error('   Failed to capture screenshots:', err);
+    }
 
     // If first run, mark experiment as started
     if (config.experiment_status === 'not_started') {
@@ -556,6 +567,25 @@ export async function runMainLoop(): Promise<RunResult> {
         success: true,
       },
     });
+
+    // ========== CAPTURE AFTER SCREENSHOTS ==========
+    console.log('\n📸 Capturing "after" screenshots...');
+    let screenshotsAfter: ScreenshotSet = { desktop: null, tablet: null, mobile: null };
+    try {
+      // Wait a few seconds for Vercel to deploy changes
+      console.log('   Waiting for deployment to propagate...');
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      screenshotsAfter = await captureAndSaveScreenshots(run.id, 'after');
+      console.log('   Screenshots captured at all breakpoints');
+    } catch (err) {
+      console.error('   Failed to capture screenshots:', err);
+    }
+
+    // Add screenshots to context for Richard
+    context.previousOutputs!.screenshots = {
+      before: screenshotsBefore,
+      after: screenshotsAfter,
+    };
 
     // ========== STEP 10: RICHARD WRITES CONTENT ==========
     console.log('\n📢 Step 10: Richard writing content...');

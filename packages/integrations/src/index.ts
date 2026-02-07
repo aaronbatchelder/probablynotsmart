@@ -4,3 +4,4 @@ export * from './email';
 export * from './blog';
 export * from './moltbook';
 export * from './social';
+export * from './screenshots';

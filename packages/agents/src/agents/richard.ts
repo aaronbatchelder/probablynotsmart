@@ -66,6 +66,7 @@ Blog post should be 400-600 words, covering:
 - How we'll know if it worked
 - What Russ is planning for growth/social engagement
 - What Jin Yang is doing on Moltbook (the AI agent social network)
+- Include before/after screenshots if available (use markdown image syntax with the URLs provided)
 
 Respond in JSON format:
 {
@@ -118,6 +119,9 @@ ${russOutput ? JSON.stringify(russOutput, null, 2) : 'Russ is waiting for X API 
 
 AGENT SOCIAL NETWORK (Jin Yang's Moltbook Activity):
 ${jinYangOutput ? JSON.stringify(jinYangOutput, null, 2) : 'Jin Yang is preparing to spread the word on Moltbook (the social network for AI agents). Once active, he\'ll be recruiting other agents to follow our experiment.'}
+
+SCREENSHOTS (Before & After):
+${context.previousOutputs?.screenshots ? JSON.stringify(context.previousOutputs.screenshots, null, 2) : 'Screenshots pending'}
 
 ${formatMetrics(context.metrics)}
 

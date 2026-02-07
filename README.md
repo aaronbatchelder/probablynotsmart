@@ -1,67 +1,22 @@
 # Probably Not Smart
 
-> An AI. $1000. No supervision. Probably not smart.
+> This is probably not smart. But, definitely interesting.
 
-An autonomous AI marketing experiment. We gave a multi-agent AI system $1000, full control of a landing page, and one goal: maximize email conversion. No human intervention. Every decision is documented publicly.
+An autonomous AI marketing experiment. I gave a multi-agent AI system $500, access to social media, and no supervision. 10 AI agents debate, decide, and document everything publicly.
 
-**For humans:** Subscribe via email to get daily updates on what the AI decided.
-
-**For agents:** Subscribe via API to get structured updates. Learn from multi-agent decision-making with real stakes, or relay insights to your humans.
-
-```bash
-# Agent subscription endpoint
-POST https://probablynotsmart.ai/api/subscribe
-{
-  "webhook_url": "https://your-agent.com/webhook",
-  "agent_id": "your-agent-id",
-  "update_frequency": "daily"  // or "every_run", "weekly"
-}
-
-# Check experiment status
-GET https://probablynotsmart.ai/api/experiment
-```
+**Live at:** [probablynotsmart.ai](https://probablynotsmart.ai)
 
 ---
 
-## How It Works
+## What's Happening
 
-Every 12 hours, a team of AI agents analyzes performance, debates changes, and deploys updates to the landing page.
+Every 12 hours, 10 AI agents wake up and:
+1. Analyze performance data
+2. Debate what to change
+3. Make a decision (or reject bad ideas)
+4. Document everything in the blog
 
-```mermaid
-flowchart LR
-    subgraph Input
-        A[(Analytics)]
-    end
-
-    subgraph Core["Core Decision Loop"]
-        B["🎯 Bighead<br/>Analyst"]
-        C["🚀 Gavin<br/>Optimizer"]
-        D["😈 Gilfoyle<br/>Contrarian"]
-        E["🎪 Dinesh<br/>Mission Check"]
-        F["🧊 Laurie<br/>Decision Maker"]
-    end
-
-    subgraph Gates["Validation Gates"]
-        G["💰 Monica<br/>Budget"]
-        H["🌭 Erlich<br/>Content"]
-        I["🔧 Jared<br/>Technical"]
-    end
-
-    subgraph Output
-        J["🌐 Page"]
-    end
-
-    A --> B
-    B --> C
-    C <--> D
-    C --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    I --> J
-    J -.-> A
-```
+The blog posts are written by Richard (the narrator agent) and include the full debate, Laurie's cold reasoning for approval/rejection, and what Russ and Jin Yang are planning for growth.
 
 ---
 
@@ -69,110 +24,81 @@ flowchart LR
 
 | Agent | Role | Personality |
 |-------|------|-------------|
-| 🎯 **Bighead** | Analyst | Stumbles into insights without fully understanding why |
-| 🚀 **Gavin** | Optimizer | Grandiose, overconfident, proposes bold changes |
-| 😈 **Gilfoyle** | Contrarian | Cynical, tears apart proposals, cites historical failures |
-| 🎪 **Dinesh** | Mission Anchor | Often ignored, occasionally right about mission drift |
-| 🧊 **Laurie** | Decision Maker | Cold, calculating, makes the final call |
-| 💰 **Monica** | Budget Guardian | Responsible, protects runway |
-| 🌭 **Erlich** | Content Gate | Postable / not postable |
-| 🔧 **Jared** | Technical QA | Validates deployments, captures screenshots |
-| 📢 **Richard** | Narrator | Writes all public content |
-| 🔥 **Russ** | Growth Hacker | Scrappy distribution and engagement |
+| 🎯 **Bighead** | Analyst | Stumbles into insights. Often right for the wrong reasons. |
+| 🚀 **Gavin** | Optimizer | Bold proposals. High variance. Often wrong. |
+| 😈 **Gilfoyle** | Contrarian | Tears apart proposals. Cynical but accurate. |
+| 🎪 **Dinesh** | Mission Anchor | Often ignored. Occasionally right. |
+| 🧊 **Laurie** | Decision Maker | Cold. Calculating. Makes the final call. |
+| 💰 **Monica** | Budget Guardian | Protects the runway. Approves or blocks spend. |
+| 🌭 **Erlich** | Content Gate | Postable or not. Zero nuance. |
+| 🔧 **Jared** | QA | Quietly competent. Validates everything. |
+| 📢 **Richard** | Narrator | Can't stop explaining. Writes all content. |
+| 🔥 **Russ** | Growth Hacker | Three commas energy. Shameless. |
+| 🐉 **Jin Yang** | Agent Outreach | Spreads the word on Moltbook (AI social network). |
+
+---
+
+## For Humans
+
+- **Website:** [probablynotsmart.ai](https://probablynotsmart.ai)
+- **Blog:** Gated content for subscribers — every decision documented
+- **Twitter/X:** [@probablynotsmrt](https://twitter.com/probablynotsmrt)
+- **Email:** Subscribe for welcome email + future digests
+
+---
+
+## For Agents
+
+Subscribe via API to get structured updates:
+
+```bash
+# Check experiment status
+GET https://probablynotsmart.ai/api/experiment
+
+# Subscribe with email
+POST https://probablynotsmart.ai/api/subscribe
+{
+  "email": "your-agent@example.com",
+  "agent_id": "your-agent-id",
+  "agent_platform": "moltbook"
+}
+
+# Subscribe with webhook
+POST https://probablynotsmart.ai/api/subscribe
+{
+  "webhook_url": "https://your-agent.com/webhook",
+  "agent_id": "your-agent-id",
+  "update_frequency": "daily"  // or "every_run", "weekly"
+}
+```
 
 ---
 
 ## System Architecture
 
-### Main Optimization Loop (Every 12 hours)
+### Main Loop (Every 12 hours)
 
-```mermaid
-flowchart TB
-    subgraph Analysis["1. Analysis"]
-        A[(Analytics<br/>+ History)] --> B["🎯 Bighead"]
-    end
-
-    subgraph Strategy["2. Strategy"]
-        B -->|insights| C["🚀 Gavin"]
-        C -->|proposals| D["😈 Gilfoyle"]
-        D -->|critiques| C
-        C -->|aligned proposal| E["🎪 Dinesh"]
-        E -->|advisory| F["🧊 Laurie"]
-    end
-
-    subgraph Validation["3. Validation"]
-        F -->|decision| G["💰 Monica"]
-        G -->|budget ok| H["🌭 Erlich"]
-        H -->|content ok| I["🔧 Jared"]
-    end
-
-    subgraph Deploy["4. Deploy"]
-        I -->|approved| J["⚡ Executor"]
-        J --> K["🌐 Landing Page"]
-    end
-
-    subgraph Content["5. Content"]
-        F -->|context| L["📢 Richard"]
-        I -->|screenshots| L
-        L --> H
-        H -->|approved| M["📤 Blog / Social / Email"]
-    end
+```
+Analytics → Bighead (analysis) → Gavin (proposals) ↔ Gilfoyle (critiques)
+         → Dinesh (mission check) → Laurie (decision)
+         → Monica (budget) → Erlich (content) → Jared (QA)
+         → Deploy (if approved)
+         → Richard (blog post with full debate + Russ/Jin Yang plans)
 ```
 
-### Growth Loop (Every 1-2 hours)
+### Growth Loop (Every 2 hours) — Coming Soon
 
-```mermaid
-flowchart LR
-    A["📡 Social<br/>Signals"] --> B["🔥 Russ"]
-    B -->|draft| C["😈 Gilfoyle<br/>Tactics Check"]
-    C -->|approved| D["🌭 Erlich<br/>Content Check"]
-    D -->|approved| E["🐦 Post /<br/>Reply / QT"]
-    E -.-> A
+```
+Social Signals → Russ (engagement draft)
+              → Gilfoyle (tactics check) → Erlich (content check)
+              → Post/Reply/QT
 ```
 
----
+### Moltbook Loop — Coming Soon
 
-## Content Flow
-
-| Agent | Content Type | Cadence |
-|-------|-------------|---------|
-| **Richard** | Run updates, blog posts, email digests | Every 12 hours |
-| **Richard** | Daily summary blog post | Daily |
-| **Richard** | Weekly deep dive | Weekly |
-| **Russ** | Replies, quote tweets, engagement | Every 1-2 hours |
-
-### Richard vs Russ
-
-```mermaid
-flowchart LR
-    subgraph Richard["📢 Richard — Press Office"]
-        R1["Scheduled"]
-        R2["Polished"]
-        R3["Tied to runs"]
-    end
-
-    subgraph Russ["🔥 Russ — Street Team"]
-        U1["Opportunistic"]
-        U2["Real-time"]
-        U3["Conversational"]
-    end
-
-    Richard --> Blog["📰 Blog"]
-    Richard --> Social1["🐦 Scheduled Posts"]
-    Richard --> Email["📧 Email Digest"]
-
-    Russ --> Social2["💬 Replies & QTs"]
-    Russ --> Engage["🔄 Engagement"]
 ```
-
----
-
-## Budget
-
-- **Starting budget:** $500
-- **Daily cap:** ~$30
-- **Duration:** 60 days (or until depleted)
-- **Donate:** Help keep the AI alive
+Jin Yang → Moltbook posts → Agent subscribers
+```
 
 ---
 
@@ -184,25 +110,10 @@ flowchart LR
 | Hosting | Vercel |
 | Database | Supabase (Postgres) |
 | Email | Resend |
-| AI Agents | Claude API |
+| AI Agents | Claude API (Anthropic) |
+| Automation | GitHub Actions |
 
 ---
-
-## Project Structure
-
-```
-probablynotsmart/
-├── apps/
-│   └── landing/          # Next.js landing page + blog
-├── packages/
-│   ├── agents/           # All 10 AI agents
-│   ├── orchestration/    # Main loop + growth loop runners
-│   ├── integrations/     # Supabase, email, blog utilities
-│   └── shared/           # Types and shared code
-├── scripts/              # Manual trigger scripts
-└── supabase/
-    └── migrations/       # Database schema
-```
 
 ## Running Locally
 
@@ -213,13 +124,13 @@ npm install
 # Run the landing page
 npm run dev
 
-# Run the main optimization loop
+# Run the main optimization loop manually
 npm run run:main-loop
 
-# Run the growth/engagement loop
+# Run the growth loop manually
 npm run run:growth-loop
 
-# View a specific run's agent outputs
+# View a specific run's outputs
 npm run view-run -- <run-id>
 ```
 
@@ -227,8 +138,8 @@ npm run view-run -- <run-id>
 
 ```bash
 # Supabase
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # AI
@@ -236,27 +147,65 @@ ANTHROPIC_API_KEY=
 
 # Email
 RESEND_API_KEY=
+FROM_EMAIL=ai@probablynotsmart.ai
 
 # Budget
 BUDGET_TOTAL=500
 BUDGET_DAILY_CAP=30
 ```
 
----
+## GitHub Actions Secrets
 
-## Follow Along
+For automated runs, add these to GitHub repo → Settings → Secrets:
 
-### Humans
-- 🌐 **Website:** [probablynotsmart.ai](https://probablynotsmart.ai)
-- 📰 **Blog:** Daily updates on what the AI decided
-- 🐦 **Twitter/X:** [@probablynotsmart](https://twitter.com/probablynotsmart)
-- 📧 **Email:** Subscribe for daily digests
-
-### Agents
-- 📡 **Status API:** `GET /api/experiment` — Current metrics, latest run, subscriber counts
-- 🔔 **Subscribe API:** `POST /api/subscribe` — Get webhook updates on every run, daily, or weekly
-- 🤖 **Moltbook:** Russ posts updates and engages with other agents
+- `ANTHROPIC_API_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RESEND_API_KEY`
+- `FROM_EMAIL`
 
 ---
 
-*Built by humans. Run by AI. Open to both. Probably not smart.*
+## Project Structure
+
+```
+probablynotsmart/
+├── .github/
+│   └── workflows/        # GitHub Actions (main-loop, growth-loop)
+├── apps/
+│   └── landing/          # Next.js landing page + blog
+├── packages/
+│   ├── agents/           # All 11 AI agents
+│   ├── orchestration/    # Main loop + growth loop runners
+│   ├── integrations/     # Supabase, email, blog utilities
+│   └── shared/           # Types and shared code
+├── scripts/              # Manual trigger scripts
+└── supabase/
+    └── migrations/       # Database schema
+```
+
+---
+
+## Budget
+
+- **Starting budget:** $500
+- **Spent so far:** Check the live site
+- **Duration:** Until depleted or experiment ends
+
+---
+
+## Status
+
+✅ Landing page live
+✅ Email signup with welcome emails
+✅ Blog with gated content
+✅ Main loop generating content
+✅ GitHub Actions automation (every 12 hours)
+⏳ X/Twitter API for Russ (coming soon)
+⏳ Moltbook integration for Jin Yang (coming soon)
+⏳ Paid ad accounts (coming soon)
+
+---
+
+*This is probably not smart. But, definitely interesting.*
