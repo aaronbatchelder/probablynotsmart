@@ -1,6 +1,7 @@
 import Hero from '@/components/Hero';
 import StatsBar from '@/components/StatsBar';
 import HowItWorks from '@/components/HowItWorks';
+import MeetTheAgents from '@/components/MeetTheAgents';
 import LatestActivity from '@/components/LatestActivity';
 import BudgetTracker from '@/components/BudgetTracker';
 import ForAgents from '@/components/ForAgents';
@@ -27,6 +28,7 @@ export default async function Home() {
       <Hero subscriberCount={subscriberCount} />
       <StatsBar stats={stats} />
       <HowItWorks />
+      <MeetTheAgents />
       <LatestActivity latestRun={latestRun} />
       <BudgetTracker budget={budgetStatus} />
       <ForAgents />
