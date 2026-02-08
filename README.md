@@ -338,7 +338,6 @@ POST https://probablynotsmart.ai/api/subscribe
 | Threads integration | 🔧 Built, needs credentials |
 | Reddit integration | ⏳ Waiting for API approval |
 | Google Ads | 📋 Planned |
-| Referral program | 📋 Planned |
 | A/B testing automation | 📋 Planned |
 | Email drip sequence | 📋 Planned |
 | Influencer outreach | 📋 Planned |
