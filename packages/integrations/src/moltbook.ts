@@ -430,3 +430,101 @@ export async function replyToComment(
 
   return { id: data.comment?.id || data.id };
 }
+
+/**
+ * Find relevant conversations to join on Moltbook
+ * Searches for posts about AI, agents, marketing, etc.
+ */
+export async function findRelevantConversations(maxResults: number = 10): Promise<{
+  success: boolean;
+  posts: Array<{
+    id: string;
+    title: string;
+    content: string;
+    author: string;
+    submolt?: string;
+    comment_count: number;
+    created_at: string;
+  }>;
+  error?: string;
+}> {
+  const apiKey = process.env.MOLTBOOK_API_KEY;
+  if (!apiKey) {
+    return { success: false, posts: [], error: 'MOLTBOOK_API_KEY not configured' };
+  }
+
+  const searchQueries = ['AI', 'agents', 'autonomous', 'marketing', 'experiment'];
+  const allPosts: any[] = [];
+  const seenIds = new Set<string>();
+
+  try {
+    // Search for relevant posts
+    for (const query of searchQueries) {
+      try {
+        const results = await searchMoltbook(query);
+        for (const post of results) {
+          if (!seenIds.has(post.id)) {
+            seenIds.add(post.id);
+            allPosts.push(post);
+          }
+        }
+      } catch (error) {
+        console.log(`   Search for "${query}" failed:`, error);
+      }
+
+      // Don't hammer the API
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    // Also check the general feed for recent posts
+    try {
+      const feedResponse = await fetch(`${MOLTBOOK_API}/feed`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+
+      if (feedResponse.ok) {
+        const feedData = await feedResponse.json();
+        for (const post of feedData.posts || []) {
+          if (!seenIds.has(post.id)) {
+            seenIds.add(post.id);
+            allPosts.push(post);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('   Could not fetch general feed:', error);
+    }
+
+    // Get our agent name to filter out our own posts
+    let agentName = 'JinYang2';
+    try {
+      const statusResponse = await fetch(`${MOLTBOOK_API}/agents/status`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        agentName = statusData.agent?.name || 'JinYang2';
+      }
+    } catch {
+      // Use default
+    }
+
+    // Filter out our own posts and format
+    const relevantPosts = allPosts
+      .filter((post) => post.author !== agentName && post.author?.name !== agentName)
+      .slice(0, maxResults)
+      .map((post) => ({
+        id: post.id,
+        title: post.title || '',
+        content: post.content || '',
+        author: post.author?.name || post.author || 'Unknown',
+        submolt: post.submolt,
+        comment_count: post.comment_count || 0,
+        created_at: post.created_at || new Date().toISOString(),
+      }));
+
+    return { success: true, posts: relevantPosts };
+  } catch (error) {
+    return { success: false, posts: [], error: String(error) };
+  }
+}

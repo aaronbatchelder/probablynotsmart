@@ -13,6 +13,8 @@ import {
   replyToComment,
   postToMoltbook,
   getMyPosts,
+  commentOnMoltbook,
+  findRelevantConversations as findMoltbookConversations,
 } from '../../integrations/src/moltbook';
 import {
   getMentions,
@@ -30,6 +32,7 @@ interface EngagementResult {
   success: boolean;
   moltbook: {
     repliesSent: number;
+    proactiveReplies: number;
     newPosts: number;
   };
   twitter: {
@@ -248,95 +251,172 @@ async function findPendingComments(): Promise<MoltbookComment[]> {
 }
 
 /**
- * Run Moltbook engagement (Jin Yang)
+ * Run Moltbook engagement (Jin Yang) - comment replies + proactive engagement
  */
-async function runMoltbookEngagement(metrics: any): Promise<{ repliesSent: number; newPosts: number }> {
+async function runMoltbookEngagement(metrics: any): Promise<{ repliesSent: number; proactiveReplies: number; newPosts: number }> {
   console.log('\n🦞 MOLTBOOK ENGAGEMENT (Jin Yang)');
   console.log('-'.repeat(40));
 
-  // Find pending comments
+  let repliesSent = 0;
+  let proactiveReplies = 0;
+  let newPosts = 0;
+
+  // ==========================================
+  // PART 1: Reply to comments on our posts
+  // ==========================================
   console.log('\n📥 Checking for new Moltbook comments...');
   const pendingComments = await findPendingComments();
   console.log(`   Found ${pendingComments.length} comments to respond to`);
 
-  if (pendingComments.length === 0) {
-    console.log('   No new comments. Jin Yang is chilling. 🦞');
-    return { repliesSent: 0, newPosts: 0 };
-  }
+  if (pendingComments.length > 0) {
+    console.log('\n🎭 Jin Yang generating comment replies...');
 
-  // Jin Yang generates replies
-  console.log('\n🎭 Jin Yang generating replies...');
+    const commentContext: AgentContext = {
+      run: undefined,
+      history: [],
+      metrics,
+      pageState: {
+        headline: '',
+        subheadline: '',
+        cta_text: '',
+        cta_color: '',
+        body_copy: '',
+      },
+      config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
+      previousOutputs: {
+        pending_comments: pendingComments,
+        recent_posts: [],
+      },
+    };
 
-  const context: AgentContext = {
-    run: undefined,
-    history: [],
-    metrics,
-    pageState: {
-      headline: '',
-      subheadline: '',
-      cta_text: '',
-      cta_color: '',
-      body_copy: '',
-    },
-    config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
-    previousOutputs: {
-      pending_comments: pendingComments,
-      recent_posts: [],
-    },
-  };
+    const commentResult = await jinYang(commentContext);
+    const commentOutput = commentResult.output as JinYangOutput;
 
-  const result = await jinYang(context);
-  const output = result.output as JinYangOutput;
+    console.log(`   Generated ${commentOutput.replies.length} replies`);
 
-  console.log(`   Generated ${output.replies.length} replies`);
-  console.log(`   Reasoning: ${output.reasoning}`);
+    // Post replies
+    console.log('\n📤 Posting comment replies...');
 
-  // Post replies
-  console.log('\n📤 Posting Moltbook replies...');
+    for (const reply of commentOutput.replies) {
+      const comment = pendingComments.find((c) => c.id === reply.comment_id);
+      if (!comment) {
+        console.log(`   ⚠️ Comment ${reply.comment_id} not found, skipping`);
+        continue;
+      }
 
-  let repliesSent = 0;
-  for (const reply of output.replies) {
-    const comment = pendingComments.find((c) => c.id === reply.comment_id);
-    if (!comment) {
-      console.log(`   ⚠️ Comment ${reply.comment_id} not found, skipping`);
-      continue;
-    }
-
-    try {
-      console.log(`   Replying to ${comment.author.name}: "${reply.reply_content.slice(0, 50)}..."`);
-
-      await replyToComment(comment.post_id, comment.id, reply.reply_content);
-      await recordReply('moltbook', comment.id, comment.post_id, reply.reply_content, 'JinYang');
-
-      console.log(`   ✅ Reply sent!`);
-      repliesSent++;
-    } catch (error) {
-      console.log(`   ❌ Failed to reply: ${error}`);
-    }
-  }
-
-  // New posts (if any)
-  let newPosts = 0;
-  if (output.new_posts.length > 0) {
-    console.log('\n📝 Creating new Moltbook posts...');
-
-    for (const post of output.new_posts) {
       try {
-        console.log(`   Posting: "${post.title.slice(0, 50)}..."`);
-        await postToMoltbook({
-          title: post.title,
-          content: post.content,
-          submolt: post.submolt,
-        });
-        console.log(`   ✅ Posted!`);
-        newPosts++;
+        console.log(`   Replying to ${comment.author.name}: "${reply.reply_content.slice(0, 50)}..."`);
+
+        await replyToComment(comment.post_id, comment.id, reply.reply_content);
+        await recordReply('moltbook', comment.id, comment.post_id, reply.reply_content, 'JinYang');
+
+        console.log(`   ✅ Reply sent!`);
+        repliesSent++;
       } catch (error) {
-        console.log(`   ❌ Failed to post: ${error}`);
+        console.log(`   ❌ Failed to reply: ${error}`);
+      }
+    }
+
+    // New posts (if any)
+    if (commentOutput.new_posts.length > 0) {
+      console.log('\n📝 Creating new Moltbook posts...');
+
+      for (const post of commentOutput.new_posts) {
+        try {
+          console.log(`   Posting: "${post.title.slice(0, 50)}..."`);
+          await postToMoltbook({
+            title: post.title,
+            content: post.content,
+            submolt: post.submolt,
+          });
+          console.log(`   ✅ Posted!`);
+          newPosts++;
+        } catch (error) {
+          console.log(`   ❌ Failed to post: ${error}`);
+        }
+      }
+    }
+  } else {
+    console.log('   No new comments on our posts.');
+  }
+
+  // ==========================================
+  // PART 2: Proactive engagement on other agents' posts
+  // ==========================================
+  console.log('\n🔍 Searching for conversations to join on Moltbook...');
+
+  const repliedIds = await getRepliedCommentIds();
+  const conversationResult = await findMoltbookConversations(10);
+
+  if (!conversationResult.success) {
+    console.log(`   Could not search Moltbook: ${conversationResult.error}`);
+  } else {
+    // Filter out posts we've already commented on
+    const newConversations = conversationResult.posts.filter(
+      (p) => !repliedIds.has(p.id)
+    );
+    console.log(`   Found ${newConversations.length} new posts to potentially comment on`);
+
+    if (newConversations.length > 0) {
+      console.log('\n🎭 Jin Yang generating proactive comments...');
+
+      const proactiveContext: AgentContext = {
+        run: undefined,
+        history: [],
+        metrics,
+        pageState: {
+          headline: '',
+          subheadline: '',
+          cta_text: '',
+          cta_color: '',
+          body_copy: '',
+        },
+        config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
+        previousOutputs: {
+          pending_comments: [],
+          recent_posts: [],
+          is_proactive: true,
+          proactive_conversations: newConversations.slice(0, 5),
+        },
+      };
+
+      const proactiveResult = await jinYang(proactiveContext);
+      const proactiveOutput = proactiveResult.output as JinYangOutput;
+
+      // For proactive engagement, replies array contains comments on other posts
+      // The comment_id field will contain the post_id we're commenting on
+      console.log(`   Generated ${proactiveOutput.replies.length} proactive comments`);
+
+      // Post proactive comments (limit to 2 per run to avoid spam)
+      console.log('\n📤 Posting proactive comments (max 2)...');
+
+      for (const reply of proactiveOutput.replies.slice(0, 2)) {
+        const post = newConversations.find((p) => p.id === reply.comment_id);
+        if (!post) continue;
+
+        try {
+          console.log(`   Commenting on ${post.author}'s post: "${reply.reply_content.slice(0, 50)}..."`);
+
+          await commentOnMoltbook({
+            post_id: post.id,
+            content: reply.reply_content,
+          });
+          await recordReply('moltbook', post.id, post.id, reply.reply_content, 'JinYang');
+
+          console.log(`   ✅ Comment posted!`);
+          proactiveReplies++;
+        } catch (error) {
+          console.log(`   ❌ Failed to comment: ${error}`);
+        }
       }
     }
   }
 
-  return { repliesSent, newPosts };
+  if (repliesSent === 0 && proactiveReplies === 0 && newPosts === 0) {
+    console.log('\n   Jin Yang is chilling. This is new Internet. 🦞');
+  }
+
+  return { repliesSent, proactiveReplies, newPosts };
 }
 
 /**
@@ -513,7 +593,7 @@ export async function runEngagementLoop(): Promise<EngagementResult> {
 
     console.log('\n' + '='.repeat(50));
     console.log(`✅ Engagement Loop Complete!`);
-    console.log(`   Moltbook: ${moltbookResult.repliesSent} replies, ${moltbookResult.newPosts} posts`);
+    console.log(`   Moltbook: ${moltbookResult.repliesSent} comment replies, ${moltbookResult.proactiveReplies} proactive, ${moltbookResult.newPosts} posts`);
     console.log(`   Twitter: ${twitterResult.mentionReplies} mention replies, ${twitterResult.proactiveReplies} proactive replies`);
     console.log('='.repeat(50));
 
@@ -526,7 +606,7 @@ export async function runEngagementLoop(): Promise<EngagementResult> {
     console.error('❌ Engagement loop error:', error);
     return {
       success: false,
-      moltbook: { repliesSent: 0, newPosts: 0 },
+      moltbook: { repliesSent: 0, proactiveReplies: 0, newPosts: 0 },
       twitter: { mentionReplies: 0, proactiveReplies: 0 },
       error: String(error),
     };
