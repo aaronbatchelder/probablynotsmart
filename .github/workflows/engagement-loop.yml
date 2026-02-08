@@ -1,13 +1,13 @@
-name: Growth Loop (Russ)
+name: Engagement Loop (Jin Yang)
 
 on:
   schedule:
-    # Run every 2 hours
-    - cron: '0 */2 * * *'
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
-  run-growth-loop:
+  run-engagement-loop:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,19 +23,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Growth Loop
+      - name: Run Engagement Loop
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MOLTBOOK_API_KEY: ${{ secrets.MOLTBOOK_API_KEY }}
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-          MOLTBOOK_API_KEY: ${{ secrets.MOLTBOOK_API_KEY }}
-        run: npm run run:growth-loop
+        run: npm run run:engagement-loop
 
       - name: Output result
         if: always()
-        run: echo "Growth loop completed at $(date)"
+        run: echo "Engagement loop completed at $(date)"

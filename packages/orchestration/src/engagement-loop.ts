@@ -7,11 +7,16 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { jinYang, JinYangOutput, MoltbookComment } from '../../agents/src/agents/jin-yang';
+import { russReplies, RussRepliesOutput, TwitterMention } from '../../agents/src/agents/russ-replies';
 import {
   getPostWithComments,
   replyToComment,
   postToMoltbook,
 } from '../../integrations/src/moltbook';
+import {
+  getMentions,
+  replyToTweet,
+} from '../../integrations/src/twitter';
 import type { AgentContext } from '../../agents/src/base';
 
 const supabase = createClient(
@@ -21,8 +26,13 @@ const supabase = createClient(
 
 interface EngagementResult {
   success: boolean;
-  repliesSent: number;
-  newPosts: number;
+  moltbook: {
+    repliesSent: number;
+    newPosts: number;
+  };
+  twitter: {
+    repliesSent: number;
+  };
   error?: string;
 }
 
@@ -63,21 +73,80 @@ async function getRepliedCommentIds(): Promise<Set<string>> {
 }
 
 /**
- * Record that we replied to a comment
+ * Record that we replied to a comment/tweet
  */
 async function recordReply(
+  platform: 'moltbook' | 'twitter',
   commentId: string,
   postId: string,
   replyContent: string,
   agentName: string
 ) {
   await supabase.from('engagement_replies').insert({
-    platform: 'moltbook',
+    platform,
     comment_id: commentId,
     post_id: postId,
     reply_content: replyContent,
     agent_name: agentName,
   });
+}
+
+/**
+ * Get Twitter mentions we've already replied to
+ */
+async function getRepliedTweetIds(): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('engagement_replies')
+    .select('comment_id')
+    .eq('platform', 'twitter');
+
+  return new Set((data || []).map((r) => r.comment_id));
+}
+
+/**
+ * Get the last mention ID we processed
+ */
+async function getLastMentionId(): Promise<string | undefined> {
+  const { data } = await supabase
+    .from('engagement_replies')
+    .select('comment_id')
+    .eq('platform', 'twitter')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  return data?.comment_id;
+}
+
+/**
+ * Find pending Twitter mentions
+ */
+async function findPendingMentions(): Promise<TwitterMention[]> {
+  const repliedIds = await getRepliedTweetIds();
+  const sinceId = await getLastMentionId();
+
+  try {
+    const result = await getMentions(sinceId);
+
+    if (!result.success) {
+      console.log(`   Could not fetch mentions: ${result.error}`);
+      return [];
+    }
+
+    // Filter out already replied
+    return result.mentions
+      .filter(m => !repliedIds.has(m.id))
+      .map(m => ({
+        id: m.id,
+        text: m.text,
+        author_username: m.author_username || 'unknown',
+        conversation_id: m.conversation_id,
+        created_at: m.created_at,
+      }));
+  } catch (error) {
+    console.error('   Error fetching mentions:', error);
+    return [];
+  }
 }
 
 /**
@@ -153,6 +222,173 @@ async function findPendingComments(): Promise<MoltbookComment[]> {
 }
 
 /**
+ * Run Moltbook engagement (Jin Yang)
+ */
+async function runMoltbookEngagement(metrics: any): Promise<{ repliesSent: number; newPosts: number }> {
+  console.log('\n🦞 MOLTBOOK ENGAGEMENT (Jin Yang)');
+  console.log('-'.repeat(40));
+
+  // Find pending comments
+  console.log('\n📥 Checking for new Moltbook comments...');
+  const pendingComments = await findPendingComments();
+  console.log(`   Found ${pendingComments.length} comments to respond to`);
+
+  if (pendingComments.length === 0) {
+    console.log('   No new comments. Jin Yang is chilling. 🦞');
+    return { repliesSent: 0, newPosts: 0 };
+  }
+
+  // Jin Yang generates replies
+  console.log('\n🎭 Jin Yang generating replies...');
+
+  const context: AgentContext = {
+    run: undefined,
+    history: [],
+    metrics,
+    pageState: {
+      headline: '',
+      subheadline: '',
+      cta_text: '',
+      cta_color: '',
+      body_copy: '',
+    },
+    config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
+    previousOutputs: {
+      pending_comments: pendingComments,
+      recent_posts: [],
+    },
+  };
+
+  const result = await jinYang(context);
+  const output = result.output as JinYangOutput;
+
+  console.log(`   Generated ${output.replies.length} replies`);
+  console.log(`   Reasoning: ${output.reasoning}`);
+
+  // Post replies
+  console.log('\n📤 Posting Moltbook replies...');
+
+  let repliesSent = 0;
+  for (const reply of output.replies) {
+    const comment = pendingComments.find((c) => c.id === reply.comment_id);
+    if (!comment) {
+      console.log(`   ⚠️ Comment ${reply.comment_id} not found, skipping`);
+      continue;
+    }
+
+    try {
+      console.log(`   Replying to ${comment.author.name}: "${reply.reply_content.slice(0, 50)}..."`);
+
+      await replyToComment(comment.post_id, comment.id, reply.reply_content);
+      await recordReply('moltbook', comment.id, comment.post_id, reply.reply_content, 'JinYang');
+
+      console.log(`   ✅ Reply sent!`);
+      repliesSent++;
+    } catch (error) {
+      console.log(`   ❌ Failed to reply: ${error}`);
+    }
+  }
+
+  // New posts (if any)
+  let newPosts = 0;
+  if (output.new_posts.length > 0) {
+    console.log('\n📝 Creating new Moltbook posts...');
+
+    for (const post of output.new_posts) {
+      try {
+        console.log(`   Posting: "${post.title.slice(0, 50)}..."`);
+        await postToMoltbook({
+          title: post.title,
+          content: post.content,
+          submolt: post.submolt,
+        });
+        console.log(`   ✅ Posted!`);
+        newPosts++;
+      } catch (error) {
+        console.log(`   ❌ Failed to post: ${error}`);
+      }
+    }
+  }
+
+  return { repliesSent, newPosts };
+}
+
+/**
+ * Run Twitter engagement (Russ)
+ */
+async function runTwitterEngagement(metrics: any): Promise<{ repliesSent: number }> {
+  console.log('\n🐦 TWITTER ENGAGEMENT (Russ)');
+  console.log('-'.repeat(40));
+
+  // Find pending mentions
+  console.log('\n📥 Checking for new Twitter mentions...');
+  const pendingMentions = await findPendingMentions();
+  console.log(`   Found ${pendingMentions.length} mentions to respond to`);
+
+  if (pendingMentions.length === 0) {
+    console.log('   No new mentions. Russ is counting his three commas. 🤙');
+    return { repliesSent: 0 };
+  }
+
+  // Russ generates replies
+  console.log('\n🎭 Russ generating replies...');
+
+  const context: AgentContext = {
+    run: undefined,
+    history: [],
+    metrics,
+    pageState: {
+      headline: '',
+      subheadline: '',
+      cta_text: '',
+      cta_color: '',
+      body_copy: '',
+    },
+    config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
+    previousOutputs: {
+      pending_mentions: pendingMentions,
+      recent_replies: [],
+    },
+  };
+
+  const result = await russReplies(context);
+  const output = result.output as RussRepliesOutput;
+
+  console.log(`   Generated ${output.replies.length} replies`);
+  console.log(`   Reasoning: ${output.reasoning}`);
+
+  // Post replies
+  console.log('\n📤 Posting Twitter replies...');
+
+  let repliesSent = 0;
+  for (const reply of output.replies) {
+    const mention = pendingMentions.find((m) => m.id === reply.tweet_id);
+    if (!mention) {
+      console.log(`   ⚠️ Tweet ${reply.tweet_id} not found, skipping`);
+      continue;
+    }
+
+    try {
+      console.log(`   Replying to @${mention.author_username}: "${reply.reply_content.slice(0, 50)}..."`);
+
+      const result = await replyToTweet(reply.reply_content, reply.tweet_id);
+
+      if (result.success) {
+        await recordReply('twitter', mention.id, mention.conversation_id, reply.reply_content, 'Russ');
+        console.log(`   ✅ Reply sent! ${result.url}`);
+        repliesSent++;
+      } else {
+        console.log(`   ❌ Failed to reply: ${result.error}`);
+      }
+    } catch (error) {
+      console.log(`   ❌ Failed to reply: ${error}`);
+    }
+  }
+
+  return { repliesSent };
+}
+
+/**
  * Run the engagement loop
  */
 export async function runEngagementLoop(): Promise<EngagementResult> {
@@ -164,101 +400,27 @@ export async function runEngagementLoop(): Promise<EngagementResult> {
     const metrics = await getCurrentMetrics();
     console.log(`   Subscribers: ${metrics.signups_total}`);
 
-    // ========== STEP 1: FIND PENDING COMMENTS ==========
-    console.log('\n📥 Step 1: Checking for new comments...');
-    const pendingComments = await findPendingComments();
-    console.log(`   Found ${pendingComments.length} comments to respond to`);
-
-    if (pendingComments.length === 0) {
-      console.log('\n   No new comments. Jin Yang is chilling. 🦞');
-      return { success: true, repliesSent: 0, newPosts: 0 };
-    }
-
-    // ========== STEP 2: JIN YANG GENERATES REPLIES ==========
-    console.log('\n🎭 Step 2: Jin Yang generating replies...');
-
-    const context: AgentContext = {
-      run: undefined,
-      history: [],
-      metrics,
-      pageState: {
-        headline: '',
-        subheadline: '',
-        cta_text: '',
-        cta_color: '',
-        body_copy: '',
-      },
-      config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
-      previousOutputs: {
-        pending_comments: pendingComments,
-        recent_posts: [],
-      },
-    };
-
-    const result = await jinYang(context);
-    const output = result.output as JinYangOutput;
-
-    console.log(`   Generated ${output.replies.length} replies`);
-    console.log(`   Reasoning: ${output.reasoning}`);
-
-    // ========== STEP 3: POST REPLIES ==========
-    console.log('\n📤 Step 3: Posting replies...');
-
-    let repliesSent = 0;
-    for (const reply of output.replies) {
-      const comment = pendingComments.find((c) => c.id === reply.comment_id);
-      if (!comment) {
-        console.log(`   ⚠️ Comment ${reply.comment_id} not found, skipping`);
-        continue;
-      }
-
-      try {
-        console.log(`   Replying to ${comment.author.name}: "${reply.reply_content.slice(0, 50)}..."`);
-
-        await replyToComment(comment.post_id, comment.id, reply.reply_content);
-        await recordReply(comment.id, comment.post_id, reply.reply_content, 'JinYang');
-
-        console.log(`   ✅ Reply sent!`);
-        repliesSent++;
-      } catch (error) {
-        console.log(`   ❌ Failed to reply: ${error}`);
-      }
-    }
-
-    // ========== STEP 4: NEW POSTS (if any) ==========
-    let newPosts = 0;
-    if (output.new_posts.length > 0) {
-      console.log('\n📝 Step 4: Creating new posts...');
-
-      for (const post of output.new_posts) {
-        try {
-          console.log(`   Posting: "${post.title.slice(0, 50)}..."`);
-          await postToMoltbook({
-            title: post.title,
-            content: post.content,
-            submolt: post.submolt,
-          });
-          console.log(`   ✅ Posted!`);
-          newPosts++;
-        } catch (error) {
-          console.log(`   ❌ Failed to post: ${error}`);
-        }
-      }
-    }
+    // Run both platforms
+    const moltbookResult = await runMoltbookEngagement(metrics);
+    const twitterResult = await runTwitterEngagement(metrics);
 
     console.log('\n' + '='.repeat(50));
     console.log(`✅ Engagement Loop Complete!`);
-    console.log(`   Replies sent: ${repliesSent}`);
-    console.log(`   New posts: ${newPosts}`);
+    console.log(`   Moltbook: ${moltbookResult.repliesSent} replies, ${moltbookResult.newPosts} posts`);
+    console.log(`   Twitter: ${twitterResult.repliesSent} replies`);
     console.log('='.repeat(50));
 
-    return { success: true, repliesSent, newPosts };
+    return {
+      success: true,
+      moltbook: moltbookResult,
+      twitter: twitterResult,
+    };
   } catch (error) {
     console.error('❌ Engagement loop error:', error);
     return {
       success: false,
-      repliesSent: 0,
-      newPosts: 0,
+      moltbook: { repliesSent: 0, newPosts: 0 },
+      twitter: { repliesSent: 0 },
       error: String(error),
     };
   }
