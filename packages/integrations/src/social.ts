@@ -18,6 +18,7 @@ export interface PostEngagementParams {
   type: 'reply' | 'quote_tweet' | 'comment' | 'post';
   targetUrl?: string;
   content: string;
+  title?: string; // Required for Moltbook posts
   submolt?: string;
   subreddit?: string;
 }
@@ -106,7 +107,7 @@ async function postToReddit(
 export async function postEngagement(
   params: PostEngagementParams
 ): Promise<PostResult> {
-  const { platform, type, targetUrl, content, submolt, subreddit } = params;
+  const { platform, type, targetUrl, content, title, submolt, subreddit } = params;
 
   try {
     switch (platform) {
@@ -141,7 +142,8 @@ export async function postEngagement(
 
       case 'moltbook':
         if (type === 'post') {
-          const result = await postToMoltbook({ content, submolt });
+          const postTitle = title || content.slice(0, 100);
+          const result = await postToMoltbook({ title: postTitle, content, submolt });
           return { success: true, id: result.id, url: result.url };
         } else {
           // It's a comment/reply
