@@ -12,6 +12,9 @@ import {
   quoteTweet,
   extractTweetId,
 } from './twitter';
+import {
+  postToLinkedIn as linkedInPost,
+} from './linkedin';
 
 export interface PostEngagementParams {
   platform: 'x' | 'linkedin' | 'threads' | 'moltbook' | 'reddit';
@@ -66,12 +69,18 @@ async function postToLinkedIn(
   content: string,
   targetUrl?: string
 ): Promise<PostResult> {
-  // TODO: Implement LinkedIn API integration
-  console.log(`[LinkedIn] Would ${type}: ${content}`);
+  // LinkedIn API integration - currently only supports top-level posts
+  if (type === 'post') {
+    return linkedInPost(content);
+  }
+
+  // LinkedIn API doesn't support replies/comments via the basic Share API
+  // Would need additional permissions and the Comments API
+  console.log(`[LinkedIn] ${type} not yet supported (needs Comments API)`);
   if (targetUrl) console.log(`[LinkedIn] Target: ${targetUrl}`);
   return {
     success: false,
-    error: 'LinkedIn API not yet configured',
+    error: `LinkedIn ${type} not yet implemented - only top-level posts are supported`,
   };
 }
 

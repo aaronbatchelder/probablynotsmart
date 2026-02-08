@@ -19,7 +19,8 @@
     "run:daily-digest": "npx tsx scripts/run-daily-digest.ts",
     "run:engagement-loop": "npx tsx scripts/run-engagement-loop.ts",
     "view-run": "npx tsx scripts/view-run.ts",
-    "db:seed": "npx tsx scripts/seed-db.ts"
+    "db:seed": "npx tsx scripts/seed-db.ts",
+    "visual-diff": "npx tsx scripts/run-visual-diff.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.0",

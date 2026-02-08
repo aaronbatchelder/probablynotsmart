@@ -12,6 +12,7 @@ import {
   getPostWithComments,
   replyToComment,
   postToMoltbook,
+  getMyPosts,
 } from '../../integrations/src/moltbook';
 import {
   getMentions,
@@ -150,25 +151,48 @@ async function findPendingMentions(): Promise<TwitterMention[]> {
 }
 
 /**
- * Get our known post IDs from database or hardcoded
+ * Get our known post IDs from multiple sources
  */
 async function getKnownPostIds(): Promise<string[]> {
-  // Try to get from database first
-  const { data } = await supabase
-    .from('growth_actions')
-    .select('external_id')
-    .eq('platform', 'moltbook')
-    .not('external_id', 'is', null);
+  const allIds: string[] = [];
 
-  const dbIds = (data || []).map((r) => r.external_id).filter(Boolean);
+  // 1. Try to get from growth_actions table (posts made by growth loop)
+  try {
+    const { data } = await supabase
+      .from('growth_actions')
+      .select('external_id')
+      .eq('platform', 'moltbook')
+      .not('external_id', 'is', null);
 
-  // Also include any hardcoded IDs we know about
+    const dbIds = (data || []).map((r) => r.external_id).filter(Boolean);
+    allIds.push(...dbIds);
+    console.log(`   Found ${dbIds.length} posts from growth_actions`);
+  } catch (error) {
+    console.log(`   Could not fetch from growth_actions: ${error}`);
+  }
+
+  // 2. Try to get our posts directly from Moltbook API
+  try {
+    const myPosts = await getMyPosts();
+    const apiIds = myPosts.map((p) => p.id);
+    allIds.push(...apiIds);
+    console.log(`   Found ${apiIds.length} posts from Moltbook API`);
+  } catch (error) {
+    console.log(`   Could not fetch from Moltbook API: ${error}`);
+  }
+
+  // 3. Include hardcoded fallback IDs
   const knownIds = [
     '76ba96ba-0292-46fe-ae19-14d9e8f4633c', // Jin Yang's first post
     '536bcd40-7bef-49c2-923d-92fea702b52d', // Hello from probablynotsmart.ai
   ];
+  allIds.push(...knownIds);
 
-  return [...new Set([...dbIds, ...knownIds])];
+  // Deduplicate
+  const uniqueIds = [...new Set(allIds)];
+  console.log(`   Total unique posts to check: ${uniqueIds.length}`);
+
+  return uniqueIds;
 }
 
 /**

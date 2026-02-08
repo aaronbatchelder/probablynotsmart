@@ -501,3 +501,81 @@ export async function getOurRecentTweets(maxResults: number = 10): Promise<{
     return { success: false, tweets: [], error: String(error) };
   }
 }
+
+/**
+ * Search for tweets matching a query
+ */
+export async function searchTweets(query: string, maxResults: number = 10): Promise<{
+  success: boolean;
+  tweets: Array<{
+    id: string;
+    text: string;
+    author_id: string;
+    author_username?: string;
+    created_at: string;
+    public_metrics?: {
+      retweet_count: number;
+      reply_count: number;
+      like_count: number;
+      quote_count: number;
+    };
+  }>;
+  error?: string;
+}> {
+  if (!X_API_KEY || !X_ACCESS_TOKEN) {
+    console.warn('[Twitter] API credentials not configured');
+    return { success: false, tweets: [], error: 'Twitter API not configured' };
+  }
+
+  const queryParams: Record<string, string> = {
+    'query': query,
+    'max_results': Math.min(maxResults, 100).toString(), // Twitter API max is 100
+    'tweet.fields': 'created_at,author_id,public_metrics',
+    'expansions': 'author_id',
+    'user.fields': 'username',
+  };
+
+  const queryString = Object.entries(queryParams)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  const searchUrl = `${X_API_BASE}/tweets/search/recent?${queryString}`;
+
+  try {
+    const response = await fetch(searchUrl, {
+      headers: {
+        'Authorization': generateOAuthHeader('GET', searchUrl, queryParams),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      return { success: false, tweets: [], error: `Failed to search tweets: ${response.status} - ${error}` };
+    }
+
+    const data = await response.json();
+
+    // Build username lookup from includes
+    const userLookup: Record<string, string> = {};
+    if (data.includes?.users) {
+      for (const user of data.includes.users) {
+        userLookup[user.id] = user.username;
+      }
+    }
+
+    const tweets = (data.data || []).map((tweet: any) => ({
+      id: tweet.id,
+      text: tweet.text,
+      author_id: tweet.author_id,
+      author_username: userLookup[tweet.author_id],
+      created_at: tweet.created_at,
+      public_metrics: tweet.public_metrics,
+    }));
+
+    console.log(`[Twitter] Found ${tweets.length} tweets for query: ${query}`);
+    return { success: true, tweets };
+
+  } catch (error) {
+    console.error('[Twitter] Error searching tweets:', error);
+    return { success: false, tweets: [], error: String(error) };
+  }
+}

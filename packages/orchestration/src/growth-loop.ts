@@ -15,6 +15,7 @@ import { gilfoyle } from '../../agents/src/agents/gilfoyle';
 import { erlich } from '../../agents/src/agents/erlich';
 import type { AgentContext } from '../../agents/src/base';
 import { postEngagement as postToSocial } from '../../integrations/src/social';
+import { discoverSocialSignals, formatSignalsForRuss } from '../../integrations/src/social-signals';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -118,8 +119,8 @@ async function saveGrowthAction(action: {
 }
 
 /**
- * Mock function to fetch social signals
- * In production, this would use Twitter/LinkedIn/Threads APIs
+ * Fetch social signals from Twitter and Moltbook
+ * Discovers relevant conversations for Russ to engage with
  */
 async function fetchSocialSignals(): Promise<Array<{
   platform: string;
@@ -127,10 +128,24 @@ async function fetchSocialSignals(): Promise<Array<{
   author: string;
   url: string;
 }>> {
-  // TODO: Implement actual social monitoring
-  // For now, return empty array (Russ will generate hypothetical engagements)
-  console.log('   📡 Social monitoring not yet implemented');
-  return [];
+  try {
+    console.log('   📡 Discovering social signals...');
+    const discovery = await discoverSocialSignals({
+      twitterMaxPerKeyword: 5,
+      platforms: ['x', 'moltbook'],
+    });
+
+    const formattedSignals = formatSignalsForRuss(discovery.signals);
+
+    console.log(`   ✅ Found ${formattedSignals.length} signals (${discovery.total_found} total discovered)`);
+    console.log(`   🔍 Searched keywords: ${discovery.keywords_searched.slice(0, 3).join(', ')}...`);
+
+    return formattedSignals;
+  } catch (error) {
+    console.error('   ⚠️  Social signal discovery failed:', error);
+    // Return empty array on error - Russ will generate hypothetical engagements
+    return [];
+  }
 }
 
 /**
