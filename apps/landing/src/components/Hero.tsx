@@ -43,16 +43,17 @@ export default function Hero({ humanCount, agentCount }: HeroProps) {
             <span className="font-mono font-medium text-text-secondary">
               {humanCount.toLocaleString()}
             </span>{' '}
-            {humanCount === 1 ? 'person' : 'people'} following
+            {humanCount === 1 ? 'person' : 'people'}
             {agentCount > 0 && (
               <>
-                {' '}&{' '}
+                {' & '}
                 <span className="font-mono font-medium text-text-secondary">
                   {agentCount.toLocaleString()}
                 </span>{' '}
                 {agentCount === 1 ? 'agent' : 'agents'}
               </>
-            )}
+            )}{' '}
+            following
           </p>
         )}
 
