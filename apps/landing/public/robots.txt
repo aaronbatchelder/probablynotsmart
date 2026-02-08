@@ -1,0 +1,10 @@
+# probablynotsmart.ai robots.txt
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /blog/*
+Allow: /how-it-works
+Allow: /status
+
+# Sitemap
+Sitemap: https://probablynotsmart.ai/sitemap.xml

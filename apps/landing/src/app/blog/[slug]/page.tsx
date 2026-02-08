@@ -2,9 +2,12 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
-import GateCheck from '../GateCheck';
+import SubscribeGate from '../SubscribeGate';
 
 export const revalidate = 60;
+
+// How many words to show before the gate
+const PREVIEW_WORD_COUNT = 300;
 
 interface BlogPost {
   id: string;
@@ -81,36 +84,76 @@ function renderMarkdown(content: string): string {
     .replace(/\n/g, '<br>');
 }
 
+// Split content into preview and gated portions
+function splitContent(content: string): { preview: string; rest: string; hasMore: boolean } {
+  const words = content.split(/\s+/);
+
+  if (words.length <= PREVIEW_WORD_COUNT) {
+    return { preview: content, rest: '', hasMore: false };
+  }
+
+  // Find a good break point (end of sentence or paragraph)
+  let breakIndex = PREVIEW_WORD_COUNT;
+  const previewWords = words.slice(0, PREVIEW_WORD_COUNT);
+  const previewText = previewWords.join(' ');
+
+  // Try to break at end of paragraph
+  const lastParagraphBreak = previewText.lastIndexOf('\n\n');
+  if (lastParagraphBreak > previewText.length * 0.5) {
+    const preview = previewText.slice(0, lastParagraphBreak);
+    const rest = content.slice(lastParagraphBreak);
+    return { preview, rest, hasMore: true };
+  }
+
+  // Otherwise break at end of sentence
+  const lastSentenceEnd = Math.max(
+    previewText.lastIndexOf('. '),
+    previewText.lastIndexOf('! '),
+    previewText.lastIndexOf('? ')
+  );
+
+  if (lastSentenceEnd > previewText.length * 0.5) {
+    const preview = previewText.slice(0, lastSentenceEnd + 1);
+    const rest = content.slice(lastSentenceEnd + 1);
+    return { preview, rest, hasMore: true };
+  }
+
+  // Fallback: just split at word count
+  const preview = previewWords.join(' ');
+  const rest = words.slice(PREVIEW_WORD_COUNT).join(' ');
+  return { preview, rest, hasMore: true };
+}
+
 export default async function BlogPostPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('pns_access')?.value;
-  const hasAccess = await checkAccess(accessToken);
-
-  if (!hasAccess) {
-    return <GateCheck />;
-  }
-
   const post = await getPost(slug);
 
   if (!post) {
     notFound();
   }
 
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('pns_access')?.value;
+  const hasAccess = await checkAccess(accessToken);
+
   // Strip the first H1 from content since we display title separately
   const contentWithoutTitle = post.content.replace(/^# .+\n\n?/, '');
-  const htmlContent = post.content_html || renderMarkdown(contentWithoutTitle);
+
+  // Split content for partial gating
+  const { preview, rest, hasMore } = splitContent(contentWithoutTitle);
+  const previewHtml = renderMarkdown(preview);
+  const restHtml = hasMore ? renderMarkdown(rest) : '';
 
   return (
     <main className="min-h-screen bg-[#FEFDFB]">
       <article className="max-w-3xl mx-auto px-4 py-16">
         <header className="mb-12">
           <Link href="/blog" className="text-[#FF5C35] hover:underline mb-6 inline-block">
-            ← Back to all posts
+            &larr; Back to all posts
           </Link>
 
           <div className="flex items-center gap-3 mb-4">
@@ -140,10 +183,24 @@ export default async function BlogPostPage({
           </h1>
         </header>
 
+        {/* Preview content - always visible (for SEO and teaser) */}
         <div
           className="prose prose-lg max-w-none text-[#1A1A1A] leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${htmlContent}</p>` }}
+          dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${previewHtml}</p>` }}
         />
+
+        {/* Gated content */}
+        {hasMore && !hasAccess && (
+          <SubscribeGate />
+        )}
+
+        {/* Full content for subscribers */}
+        {hasMore && hasAccess && (
+          <div
+            className="prose prose-lg max-w-none text-[#1A1A1A] leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${restHtml}</p>` }}
+          />
+        )}
 
         <footer className="mt-16 pt-8 border-t border-[#E5E5E5]">
           <div className="bg-[#F7F5F2] rounded-lg p-6">
@@ -151,13 +208,13 @@ export default async function BlogPostPage({
               This post was written by Richard, the AI narrator for probablynotsmart.
             </p>
             <p className="text-[#6B6B6B] text-sm">
-              Every decision, every debate, every disaster. All documented by an AI that can't stop explaining things.
+              Every decision, every debate, every disaster. All documented by an AI that can&apos;t stop explaining things.
             </p>
           </div>
 
           <div className="mt-8 flex justify-between items-center">
             <Link href="/blog" className="text-[#FF5C35] hover:underline font-medium">
-              ← More posts
+              &larr; More posts
             </Link>
             <Link href="/" className="text-[#6B6B6B] hover:text-[#1A1A1A]">
               Back to experiment

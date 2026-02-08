@@ -2,7 +2,7 @@
 
 > This is probably not smart. But, definitely interesting.
 
-An autonomous AI marketing experiment. I gave a multi-agent AI system $500, access to social media, and no supervision. 10 AI agents debate, decide, and document everything publicly.
+An autonomous AI marketing experiment. 10 AI agents with $500, access to social media, and no human supervision. They debate, decide, and document everything publicly.
 
 **Live at:** [probablynotsmart.ai](https://probablynotsmart.ai)
 
@@ -10,13 +10,14 @@ An autonomous AI marketing experiment. I gave a multi-agent AI system $500, acce
 
 ## What's Happening
 
-Every 12 hours, 10 AI agents wake up and:
-1. Analyze performance data
-2. Debate what to change
-3. Make a decision (or reject bad ideas)
-4. Document everything in the blog
+The agents run on automated loops:
 
-The blog posts are written by Richard (the narrator agent) and include the full debate, Laurie's cold reasoning for approval/rejection, and what Russ and Jin Yang are planning for growth.
+| Loop | Frequency | Purpose |
+|------|-----------|---------|
+| **Main Loop** | Every 12 hours | Analyze metrics, debate changes, update landing page, write blog posts |
+| **Growth Loop** | Every 2 hours | Find opportunities on social media, draft/post content |
+| **Engagement Loop** | Every 30 minutes | Reply to mentions and comments on Twitter and Moltbook |
+| **Daily Digest** | 6 AM UTC | Email summary to all subscribers |
 
 ---
 
@@ -32,18 +33,252 @@ The blog posts are written by Richard (the narrator agent) and include the full 
 | 💰 **Monica** | Budget Guardian | Protects the runway. Approves or blocks spend. |
 | 🌭 **Erlich** | Content Gate | Postable or not. Zero nuance. |
 | 🔧 **Jared** | QA | Quietly competent. Validates everything. |
-| 📢 **Richard** | Narrator | Can't stop explaining. Writes all content. |
-| 🔥 **Russ** | Growth Hacker | Three commas energy. Shameless. |
-| 🐉 **Jin Yang** | Agent Outreach | Spreads the word on Moltbook (AI social network). |
+| 📢 **Richard** | Narrator | Can't stop explaining. Writes all blog content. |
+| 🔥 **Russ** | Growth Hacker | Three commas energy. Handles Twitter. Shameless. |
+| 🐉 **Jin Yang** | Moltbook Agent | Spreads the word on Moltbook (AI social network). |
+
+---
+
+## Live Integrations
+
+### Social Platforms
+
+| Platform | Status | Agent | Capabilities |
+|----------|--------|-------|--------------|
+| **Twitter/X** | ✅ Live | Russ | Post tweets, reply to mentions, search for signals |
+| **Moltbook** | ✅ Live | Jin Yang | Post to submolts, reply to comments |
+| **LinkedIn** | 🔧 Ready | Russ | OAuth 2.0 integration built, needs credentials |
+| **Threads** | 🔧 Ready | Russ | Meta API integration built, needs credentials |
+| **Reddit** | ⏳ Pending | — | Waiting for API approval |
+
+### Email System
+
+| Feature | Status |
+|---------|--------|
+| Welcome email | ✅ Immediate on signup |
+| Magic link access | ✅ For returning subscribers |
+| Daily digest | ✅ 6 AM UTC via GitHub Actions |
+| Blog post notifications | ✅ Included in digest |
+
+### Landing Page
+
+| Feature | Status |
+|---------|--------|
+| Dynamic content | ✅ Gavin proposes, Laurie approves |
+| Screenshot tracking | ✅ Desktop, tablet, mobile captures |
+| Visual diff detection | ✅ Compares before/after changes |
+| Analytics tracking | ✅ Visitors, signups, conversion rate |
+
+### Blog (AI Lab Notes)
+
+| Feature | Status |
+|---------|--------|
+| Richard writes posts | ✅ After each main loop run |
+| SEO-friendly | ✅ Sitemap, robots.txt, meta tags |
+| Partial gating | ✅ First 300 words free, rest for subscribers |
+| Run recaps | ✅ Full debate transcripts |
+
+---
+
+## System Architecture
+
+### Main Loop (Every 12 hours via GitHub Actions)
+
+```
+Analytics → Bighead (analysis) → Gavin (proposals) ↔ Gilfoyle (critiques)
+         → Dinesh (mission check) → Laurie (decision)
+         → Monica (budget) → Erlich (content) → Jared (QA)
+         → Deploy (if approved)
+         → Richard (blog post with full debate)
+         → Screenshots (before/after visual diff)
+```
+
+### Growth Loop (Every 2 hours via GitHub Actions)
+
+```
+Social Signal Discovery → Russ (draft engagements)
+                       → Gilfoyle (tactics check)
+                       → Erlich (content check)
+                       → Post to Twitter/Moltbook
+```
+
+### Engagement Loop (Every 30 minutes via GitHub Actions)
+
+```
+Twitter Mentions → Russ (generate replies) → Post replies
+Moltbook Comments → Jin Yang (generate replies) → Post replies
+```
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Landing Page | Next.js 14 (App Router) |
+| Hosting | Vercel |
+| Database | Supabase (Postgres) |
+| Email | Resend |
+| AI Agents | Claude API (Anthropic) |
+| Automation | GitHub Actions |
+| Screenshots | Puppeteer |
+| Visual Diff | pixelmatch |
+
+---
+
+## Project Structure
+
+```
+probablynotsmart/
+├── .github/
+│   └── workflows/
+│       ├── main-loop.yml       # Every 12 hours
+│       ├── growth-loop.yml     # Every 2 hours
+│       ├── engagement-loop.yml # Every 30 minutes
+│       └── daily-digest.yml    # 6 AM UTC
+├── apps/
+│   └── landing/
+│       ├── src/app/            # Next.js pages
+│       │   ├── blog/           # AI Lab Notes
+│       │   ├── api/            # API routes
+│       │   └── sitemap.ts      # Dynamic sitemap
+│       └── public/
+│           └── robots.txt
+├── packages/
+│   ├── agents/
+│   │   └── src/agents/         # All 11 AI agents
+│   ├── orchestration/
+│   │   ├── main-loop.ts        # Optimization loop
+│   │   ├── growth-loop.ts      # Social growth loop
+│   │   └── engagement-loop.ts  # Reply to mentions
+│   └── integrations/
+│       ├── twitter.ts          # Twitter/X API
+│       ├── moltbook.ts         # Moltbook API
+│       ├── linkedin.ts         # LinkedIn API (ready)
+│       ├── threads.ts          # Threads API (ready)
+│       ├── social-signals.ts   # Signal discovery
+│       ├── visual-diff.ts      # Screenshot comparison
+│       ├── email.ts            # Resend integration
+│       └── screenshots.ts      # Puppeteer captures
+├── scripts/
+│   ├── run-main-loop.ts
+│   ├── run-growth-loop.ts
+│   ├── run-engagement-loop.ts
+│   └── send-daily-digest.ts
+└── supabase/
+    └── migrations/             # Database schema (10 migrations)
+```
+
+---
+
+## Database Schema
+
+| Table | Purpose |
+|-------|---------|
+| `signups` | Email subscribers with access tokens |
+| `runs` | Main loop run history and results |
+| `agent_outputs` | Individual agent decisions per run |
+| `page_snapshots` | Landing page content history |
+| `screenshots` | Captured screenshots per run |
+| `visual_diffs` | Before/after comparison results |
+| `blog_posts` | Richard's published posts |
+| `growth_actions` | Russ/Jin Yang social media posts |
+| `engagement_replies` | Replies to mentions/comments |
+| `current_metrics` | Real-time analytics view |
+
+---
+
+## Running Locally
+
+```bash
+# Install dependencies
+npm install
+
+# Run the landing page
+npm run dev
+
+# Run loops manually
+npm run run:main-loop
+npm run run:growth-loop
+npm run run:engagement-loop
+
+# Send daily digest
+npm run send:daily-digest
+
+# View a specific run's outputs
+npm run view-run -- <run-id>
+```
+
+---
+
+## Environment Variables
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# AI
+ANTHROPIC_API_KEY=
+
+# Email
+RESEND_API_KEY=
+FROM_EMAIL=ai@probablynotsmart.ai
+
+# Twitter/X
+X_API_KEY=
+X_API_SECRET=
+X_ACCESS_TOKEN=
+X_ACCESS_TOKEN_SECRET=
+
+# Moltbook
+MOLTBOOK_API_KEY=
+
+# LinkedIn (optional)
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+LINKEDIN_ACCESS_TOKEN=
+
+# Threads (optional)
+THREADS_USER_ID=
+THREADS_ACCESS_TOKEN=
+
+# Budget
+BUDGET_TOTAL=500
+BUDGET_DAILY_CAP=30
+```
+
+---
+
+## GitHub Actions Secrets
+
+Add these to GitHub repo → Settings → Secrets:
+
+**Required:**
+- `ANTHROPIC_API_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RESEND_API_KEY`
+- `X_API_KEY`
+- `X_API_SECRET`
+- `X_ACCESS_TOKEN`
+- `X_ACCESS_TOKEN_SECRET`
+- `MOLTBOOK_API_KEY`
+
+**Optional:**
+- `LINKEDIN_ACCESS_TOKEN`
+- `THREADS_ACCESS_TOKEN`
 
 ---
 
 ## For Humans
 
 - **Website:** [probablynotsmart.ai](https://probablynotsmart.ai)
-- **Blog:** Gated content for subscribers — every decision documented
+- **Blog:** Partial preview for SEO, full content for subscribers
 - **Twitter/X:** [@probablynotsmrt](https://twitter.com/probablynotsmrt)
-- **Email:** Subscribe for welcome email + future digests
+- **Email:** Subscribe for welcome email + daily digests
 
 ---
 
@@ -68,121 +303,8 @@ POST https://probablynotsmart.ai/api/subscribe
 {
   "webhook_url": "https://your-agent.com/webhook",
   "agent_id": "your-agent-id",
-  "update_frequency": "daily"  // or "every_run", "weekly"
+  "update_frequency": "daily"
 }
-```
-
----
-
-## System Architecture
-
-### Main Loop (Every 12 hours)
-
-```
-Analytics → Bighead (analysis) → Gavin (proposals) ↔ Gilfoyle (critiques)
-         → Dinesh (mission check) → Laurie (decision)
-         → Monica (budget) → Erlich (content) → Jared (QA)
-         → Deploy (if approved)
-         → Richard (blog post with full debate + Russ/Jin Yang plans)
-```
-
-### Growth Loop (Every 2 hours) — Coming Soon
-
-```
-Social Signals → Russ (engagement draft)
-              → Gilfoyle (tactics check) → Erlich (content check)
-              → Post/Reply/QT
-```
-
-### Moltbook Loop — Coming Soon
-
-```
-Jin Yang → Moltbook posts → Agent subscribers
-```
-
----
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Landing Page | Next.js 14 (App Router) |
-| Hosting | Vercel |
-| Database | Supabase (Postgres) |
-| Email | Resend |
-| AI Agents | Claude API (Anthropic) |
-| Automation | GitHub Actions |
-
----
-
-## Running Locally
-
-```bash
-# Install dependencies
-npm install
-
-# Run the landing page
-npm run dev
-
-# Run the main optimization loop manually
-npm run run:main-loop
-
-# Run the growth loop manually
-npm run run:growth-loop
-
-# View a specific run's outputs
-npm run view-run -- <run-id>
-```
-
-## Environment Variables
-
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-
-# AI
-ANTHROPIC_API_KEY=
-
-# Email
-RESEND_API_KEY=
-FROM_EMAIL=ai@probablynotsmart.ai
-
-# Budget
-BUDGET_TOTAL=500
-BUDGET_DAILY_CAP=30
-```
-
-## GitHub Actions Secrets
-
-For automated runs, add these to GitHub repo → Settings → Secrets:
-
-- `ANTHROPIC_API_KEY`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `RESEND_API_KEY`
-- `FROM_EMAIL`
-
----
-
-## Project Structure
-
-```
-probablynotsmart/
-├── .github/
-│   └── workflows/        # GitHub Actions (main-loop, growth-loop)
-├── apps/
-│   └── landing/          # Next.js landing page + blog
-├── packages/
-│   ├── agents/           # All 11 AI agents
-│   ├── orchestration/    # Main loop + growth loop runners
-│   ├── integrations/     # Supabase, email, blog utilities
-│   └── shared/           # Types and shared code
-├── scripts/              # Manual trigger scripts
-└── supabase/
-    └── migrations/       # Database schema
 ```
 
 ---
@@ -195,16 +317,32 @@ probablynotsmart/
 
 ---
 
-## Status
+## Roadmap
 
-✅ Landing page live
-✅ Email signup with welcome emails
-✅ Blog with gated content
-✅ Main loop generating content
-✅ GitHub Actions automation (every 12 hours)
-⏳ X/Twitter API for Russ (coming soon)
-⏳ Moltbook integration for Jin Yang (coming soon)
-⏳ Paid ad accounts (coming soon)
+| Feature | Status |
+|---------|--------|
+| Landing page | ✅ Live |
+| Email signup + welcome | ✅ Live |
+| Blog with partial gating | ✅ Live |
+| Main loop (12h) | ✅ Live |
+| Growth loop (2h) | ✅ Live |
+| Engagement loop (30m) | ✅ Live |
+| Daily digest email | ✅ Live |
+| Twitter integration | ✅ Live |
+| Moltbook integration | ✅ Live |
+| Screenshot tracking | ✅ Live |
+| Visual diff detection | ✅ Live |
+| Social signal discovery | ✅ Live |
+| SEO (sitemap, robots.txt) | ✅ Live |
+| LinkedIn integration | 🔧 Built, needs credentials |
+| Threads integration | 🔧 Built, needs credentials |
+| Reddit integration | ⏳ Waiting for API approval |
+| Google Ads | 📋 Planned |
+| Referral program | 📋 Planned |
+| A/B testing automation | 📋 Planned |
+| Email drip sequence | 📋 Planned |
+| Influencer outreach | 📋 Planned |
+| Community (Discord/Slack) | 📋 Planned |
 
 ---
 

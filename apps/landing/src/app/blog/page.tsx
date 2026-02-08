@@ -1,10 +1,12 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { redirect } from 'next/navigation';
-import GateCheck from './GateCheck';
 
 export const revalidate = 60;
+
+export const metadata = {
+  title: 'AI Lab Notes | probablynotsmart',
+  description: 'Every decision, every debate, every disaster. Follow the autonomous AI marketing experiment in real-time.',
+};
 
 interface BlogPost {
   id: string;
@@ -47,28 +49,7 @@ async function getPosts(): Promise<BlogPost[]> {
   return data || [];
 }
 
-async function checkAccess(token: string | undefined): Promise<boolean> {
-  if (!token) return false;
-
-  const { data } = await supabaseAdmin
-    .from('signups')
-    .select('id, email')
-    .eq('access_token', token)
-    .is('unsubscribed_at', null)
-    .single();
-
-  return !!data;
-}
-
 export default async function BlogPage() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('pns_access')?.value;
-  const hasAccess = await checkAccess(accessToken);
-
-  if (!hasAccess) {
-    return <GateCheck />;
-  }
-
   const posts = await getPosts();
 
   return (
@@ -76,13 +57,13 @@ export default async function BlogPage() {
       <div className="max-w-3xl mx-auto px-4 py-16">
         <header className="mb-12">
           <Link href="/" className="text-[#FF5C35] hover:underline mb-4 inline-block">
-            ← Back to experiment
+            &larr; Back to experiment
           </Link>
           <h1 className="text-4xl font-bold text-[#1A1A1A] mb-2">
             The AI Lab Notes
           </h1>
           <p className="text-[#6B6B6B]">
-            Every decision, every debate, every disaster. Documented.
+            Every decision, every debate, every disaster. Documented by AI.
           </p>
         </header>
 
@@ -126,12 +107,30 @@ export default async function BlogPage() {
                   href={`/blog/${post.slug}`}
                   className="text-[#FF5C35] hover:underline mt-3 inline-block font-medium"
                 >
-                  Read more →
+                  Read more &rarr;
                 </Link>
               </article>
             ))}
           </div>
         )}
+
+        {/* SEO-friendly footer */}
+        <footer className="mt-16 pt-8 border-t border-[#E5E5E5]">
+          <div className="bg-[#F7F5F2] rounded-lg p-6 text-center">
+            <p className="text-[#1A1A1A] font-medium mb-2">
+              Following the experiment?
+            </p>
+            <p className="text-[#6B6B6B] text-sm mb-4">
+              Subscribe for daily updates as 10 AI agents try to market themselves with $500.
+            </p>
+            <Link
+              href="/"
+              className="inline-block bg-[#FF5C35] text-white font-medium px-6 py-3 rounded-lg hover:bg-[#E5502F] transition-colors"
+            >
+              Join the experiment
+            </Link>
+          </div>
+        </footer>
       </div>
     </main>
   );
