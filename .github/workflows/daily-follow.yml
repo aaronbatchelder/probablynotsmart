@@ -1,13 +1,13 @@
-name: Growth Loop (Russ)
+name: Daily Follow (Targeted)
 
 on:
   schedule:
-    # Run every 6 hours (4 posts/day max)
-    - cron: '0 */6 * * *'
+    # Run once per day at 2 PM UTC (10 AM EST)
+    - cron: '0 14 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
-  run-growth-loop:
+  run-daily-follow:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Growth Loop
+      - name: Run Daily Follow
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -33,9 +33,8 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-          MOLTBOOK_API_KEY: ${{ secrets.MOLTBOOK_API_KEY }}
-        run: npm run run:growth-loop
+        run: npm run run:daily-follow
 
       - name: Output result
         if: always()
-        run: echo "Growth loop completed at $(date)"
+        run: echo "Daily follow completed at $(date)"

@@ -17,6 +17,7 @@ import {
 import {
   getMentions,
   replyToTweet,
+  findRelevantConversations,
 } from '../../integrations/src/twitter';
 import type { AgentContext } from '../../agents/src/base';
 
@@ -32,7 +33,8 @@ interface EngagementResult {
     newPosts: number;
   };
   twitter: {
-    repliesSent: number;
+    mentionReplies: number;
+    proactiveReplies: number;
   };
   error?: string;
 }
@@ -338,78 +340,159 @@ async function runMoltbookEngagement(metrics: any): Promise<{ repliesSent: numbe
 }
 
 /**
- * Run Twitter engagement (Russ)
+ * Run Twitter engagement (Russ) - mentions + proactive conversation replies
  */
-async function runTwitterEngagement(metrics: any): Promise<{ repliesSent: number }> {
+async function runTwitterEngagement(metrics: any): Promise<{ mentionReplies: number; proactiveReplies: number }> {
   console.log('\n🐦 TWITTER ENGAGEMENT (Russ)');
   console.log('-'.repeat(40));
 
-  // Find pending mentions
+  let mentionReplies = 0;
+  let proactiveReplies = 0;
+
+  // ==========================================
+  // PART 1: Reply to mentions
+  // ==========================================
   console.log('\n📥 Checking for new Twitter mentions...');
   const pendingMentions = await findPendingMentions();
   console.log(`   Found ${pendingMentions.length} mentions to respond to`);
 
-  if (pendingMentions.length === 0) {
-    console.log('   No new mentions. Russ is counting his three commas. 🤙');
-    return { repliesSent: 0 };
-  }
+  if (pendingMentions.length > 0) {
+    console.log('\n🎭 Russ generating mention replies...');
 
-  // Russ generates replies
-  console.log('\n🎭 Russ generating replies...');
+    const mentionContext: AgentContext = {
+      run: undefined,
+      history: [],
+      metrics,
+      pageState: {
+        headline: '',
+        subheadline: '',
+        cta_text: '',
+        cta_color: '',
+        body_copy: '',
+      },
+      config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
+      previousOutputs: {
+        pending_mentions: pendingMentions,
+        recent_replies: [],
+      },
+    };
 
-  const context: AgentContext = {
-    run: undefined,
-    history: [],
-    metrics,
-    pageState: {
-      headline: '',
-      subheadline: '',
-      cta_text: '',
-      cta_color: '',
-      body_copy: '',
-    },
-    config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
-    previousOutputs: {
-      pending_mentions: pendingMentions,
-      recent_replies: [],
-    },
-  };
+    const mentionResult = await russReplies(mentionContext);
+    const mentionOutput = mentionResult.output as RussRepliesOutput;
 
-  const result = await russReplies(context);
-  const output = result.output as RussRepliesOutput;
+    console.log(`   Generated ${mentionOutput.replies.length} replies`);
 
-  console.log(`   Generated ${output.replies.length} replies`);
-  console.log(`   Reasoning: ${output.reasoning}`);
+    // Post mention replies
+    console.log('\n📤 Posting mention replies...');
 
-  // Post replies
-  console.log('\n📤 Posting Twitter replies...');
+    for (const reply of mentionOutput.replies) {
+      const mention = pendingMentions.find((m) => m.id === reply.tweet_id);
+      if (!mention) continue;
 
-  let repliesSent = 0;
-  for (const reply of output.replies) {
-    const mention = pendingMentions.find((m) => m.id === reply.tweet_id);
-    if (!mention) {
-      console.log(`   ⚠️ Tweet ${reply.tweet_id} not found, skipping`);
-      continue;
-    }
+      try {
+        console.log(`   Replying to @${mention.author_username}: "${reply.reply_content.slice(0, 50)}..."`);
 
-    try {
-      console.log(`   Replying to @${mention.author_username}: "${reply.reply_content.slice(0, 50)}..."`);
+        const result = await replyToTweet(reply.reply_content, reply.tweet_id);
 
-      const result = await replyToTweet(reply.reply_content, reply.tweet_id);
-
-      if (result.success) {
-        await recordReply('twitter', mention.id, mention.conversation_id, reply.reply_content, 'Russ');
-        console.log(`   ✅ Reply sent! ${result.url}`);
-        repliesSent++;
-      } else {
-        console.log(`   ❌ Failed to reply: ${result.error}`);
+        if (result.success) {
+          await recordReply('twitter', mention.id, mention.conversation_id, reply.reply_content, 'Russ');
+          console.log(`   ✅ Reply sent! ${result.url}`);
+          mentionReplies++;
+        } else {
+          console.log(`   ❌ Failed to reply: ${result.error}`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Failed to reply: ${error}`);
       }
-    } catch (error) {
-      console.log(`   ❌ Failed to reply: ${error}`);
+    }
+  } else {
+    console.log('   No new mentions.');
+  }
+
+  // ==========================================
+  // PART 2: Proactive conversation search
+  // ==========================================
+  console.log('\n🔍 Searching for relevant conversations to join...');
+
+  const repliedIds = await getRepliedTweetIds();
+  const conversationResult = await findRelevantConversations(10);
+
+  if (!conversationResult.success) {
+    console.log(`   Could not search conversations: ${conversationResult.error}`);
+  } else {
+    // Filter out conversations we've already replied to
+    const newConversations = conversationResult.conversations.filter(
+      (c) => !repliedIds.has(c.id)
+    );
+    console.log(`   Found ${newConversations.length} new conversations to potentially join`);
+
+    if (newConversations.length > 0) {
+      // Convert to the format Russ expects
+      const conversationsAsMentions: TwitterMention[] = newConversations.slice(0, 5).map((c) => ({
+        id: c.id,
+        text: c.text,
+        author_username: c.author_username,
+        conversation_id: c.id, // Use tweet ID as conversation ID for proactive
+        created_at: c.created_at,
+      }));
+
+      console.log('\n🎭 Russ generating proactive replies...');
+
+      const proactiveContext: AgentContext = {
+        run: undefined,
+        history: [],
+        metrics,
+        pageState: {
+          headline: '',
+          subheadline: '',
+          cta_text: '',
+          cta_color: '',
+          body_copy: '',
+        },
+        config: { budget_total: 500, budget_spent: 0, budget_daily_cap: 30 },
+        previousOutputs: {
+          pending_mentions: conversationsAsMentions,
+          recent_replies: [],
+          is_proactive: true, // Flag so Russ knows these aren't direct mentions
+        },
+      };
+
+      const proactiveResult = await russReplies(proactiveContext);
+      const proactiveOutput = proactiveResult.output as RussRepliesOutput;
+
+      console.log(`   Generated ${proactiveOutput.replies.length} proactive replies`);
+
+      // Post proactive replies (limit to 3 per run to avoid spam)
+      console.log('\n📤 Posting proactive replies (max 3)...');
+
+      for (const reply of proactiveOutput.replies.slice(0, 3)) {
+        const convo = conversationsAsMentions.find((c) => c.id === reply.tweet_id);
+        if (!convo) continue;
+
+        try {
+          console.log(`   Joining @${convo.author_username}'s conversation: "${reply.reply_content.slice(0, 50)}..."`);
+
+          const result = await replyToTweet(reply.reply_content, reply.tweet_id);
+
+          if (result.success) {
+            await recordReply('twitter', convo.id, convo.id, reply.reply_content, 'Russ');
+            console.log(`   ✅ Reply sent! ${result.url}`);
+            proactiveReplies++;
+          } else {
+            console.log(`   ❌ Failed to reply: ${result.error}`);
+          }
+        } catch (error) {
+          console.log(`   ❌ Failed to reply: ${error}`);
+        }
+      }
     }
   }
 
-  return { repliesSent };
+  if (mentionReplies === 0 && proactiveReplies === 0) {
+    console.log('\n   Russ is counting his three commas. 🤙');
+  }
+
+  return { mentionReplies, proactiveReplies };
 }
 
 /**
@@ -431,7 +514,7 @@ export async function runEngagementLoop(): Promise<EngagementResult> {
     console.log('\n' + '='.repeat(50));
     console.log(`✅ Engagement Loop Complete!`);
     console.log(`   Moltbook: ${moltbookResult.repliesSent} replies, ${moltbookResult.newPosts} posts`);
-    console.log(`   Twitter: ${twitterResult.repliesSent} replies`);
+    console.log(`   Twitter: ${twitterResult.mentionReplies} mention replies, ${twitterResult.proactiveReplies} proactive replies`);
     console.log('='.repeat(50));
 
     return {
@@ -444,7 +527,7 @@ export async function runEngagementLoop(): Promise<EngagementResult> {
     return {
       success: false,
       moltbook: { repliesSent: 0, newPosts: 0 },
-      twitter: { repliesSent: 0 },
+      twitter: { mentionReplies: 0, proactiveReplies: 0 },
       error: String(error),
     };
   }
