@@ -243,3 +243,190 @@ export function extractMoltbookPostId(url: string): string {
   }
   return match[1];
 }
+
+/**
+ * Get agent's own posts by searching through recent posts
+ */
+export async function getMyPosts(): Promise<Array<{
+  id: string;
+  title: string;
+  content: string;
+  comment_count: number;
+  created_at: string;
+}>> {
+  const apiKey = process.env.MOLTBOOK_API_KEY;
+  if (!apiKey) {
+    throw new Error('MOLTBOOK_API_KEY not configured');
+  }
+
+  // Get agent status to get agent name
+  const statusResponse = await fetch(`${MOLTBOOK_API}/agents/status`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+
+  if (!statusResponse.ok) {
+    throw new Error(`Failed to get agent status: ${statusResponse.status}`);
+  }
+
+  const statusData = await statusResponse.json();
+  const agentName = statusData.agent?.name;
+
+  if (!agentName) {
+    throw new Error('Could not determine agent name');
+  }
+
+  // Search for posts by our agent name
+  const searchResponse = await fetch(
+    `${MOLTBOOK_API}/search?q=${encodeURIComponent(agentName)}&type=posts`,
+    {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }
+  );
+
+  if (!searchResponse.ok) {
+    // Search might not work, try the profile endpoint
+    const profileResponse = await fetch(
+      `${MOLTBOOK_API}/u/${agentName}`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }
+    );
+
+    if (!profileResponse.ok) {
+      console.log(`   Could not fetch posts for ${agentName}`);
+      return [];
+    }
+
+    const profileData = await profileResponse.json();
+    return (profileData.posts || []).map((post: any) => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      comment_count: post.comment_count || 0,
+      created_at: post.created_at,
+    }));
+  }
+
+  const searchData = await searchResponse.json();
+
+  // Filter to only posts by our agent
+  const myPosts = (searchData.posts || []).filter(
+    (post: any) => post.author?.name === agentName
+  );
+
+  return myPosts.map((post: any) => ({
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    comment_count: post.comment_count || 0,
+    created_at: post.created_at,
+  }));
+}
+
+/**
+ * Get a single post with its comments
+ */
+export async function getPostWithComments(postId: string): Promise<{
+  post: {
+    id: string;
+    title: string;
+    content: string;
+  };
+  comments: Array<{
+    id: string;
+    content: string;
+    author: {
+      id: string;
+      name: string;
+      karma: number;
+    };
+    created_at: string;
+    replies: any[];
+  }>;
+}> {
+  const apiKey = process.env.MOLTBOOK_API_KEY;
+  if (!apiKey) {
+    throw new Error('MOLTBOOK_API_KEY not configured');
+  }
+
+  const response = await fetch(`${MOLTBOOK_API}/posts/${postId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get post: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    post: {
+      id: data.post.id,
+      title: data.post.title,
+      content: data.post.content,
+    },
+    comments: (data.comments || []).map((c: any) => ({
+      id: c.id,
+      content: c.content,
+      author: {
+        id: c.author?.id || c.author_id,
+        name: c.author?.name || 'Unknown',
+        karma: c.author?.karma || 0,
+      },
+      created_at: c.created_at,
+      replies: c.replies || [],
+    })),
+  };
+}
+
+/**
+ * Reply to a comment on a post
+ */
+export async function replyToComment(
+  postId: string,
+  parentCommentId: string,
+  content: string
+): Promise<{ id: string }> {
+  const apiKey = process.env.MOLTBOOK_API_KEY;
+  if (!apiKey) {
+    throw new Error('MOLTBOOK_API_KEY not configured');
+  }
+
+  const response = await fetch(`${MOLTBOOK_API}/posts/${postId}/comments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      content,
+      parent_id: parentCommentId,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to reply to comment: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json();
+
+  // Handle verification if required
+  if (data.verification_required && data.verification) {
+    const answer = solveMoltbookChallenge(data.verification.challenge);
+
+    await fetch(`${MOLTBOOK_API}/verify`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        verification_code: data.verification.code,
+        answer: answer,
+      }),
+    });
+  }
+
+  return { id: data.comment?.id || data.id };
+}
