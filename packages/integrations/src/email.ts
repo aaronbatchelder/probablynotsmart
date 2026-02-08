@@ -31,43 +31,57 @@ interface EmailOptions {
 }
 
 /**
- * Send an email via Resend
+ * Send an email via Resend with retry logic for rate limits
  */
-export async function sendEmail(options: EmailOptions): Promise<{ success: boolean; id?: string; error?: string }> {
+export async function sendEmail(options: EmailOptions, retries = 3): Promise<{ success: boolean; id?: string; error?: string }> {
   if (!RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set, skipping email send');
     return { success: false, error: 'Email not configured' };
   }
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: `probablynotsmart <${FROM_EMAIL}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-        reply_to: options.replyTo,
-      }),
-    });
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: `probablynotsmart <${FROM_EMAIL}>`,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          text: options.text,
+          reply_to: options.replyTo,
+        }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      console.error('Resend error:', data);
-      return { success: false, error: data.message || 'Failed to send email' };
+      if (response.status === 429) {
+        // Rate limited - exponential backoff
+        const waitTime = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+        console.log(`[Email] Rate limited, waiting ${waitTime}ms before retry ${attempt + 1}/${retries}`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+
+      if (!response.ok) {
+        console.error('Resend error:', data);
+        return { success: false, error: data.message || 'Failed to send email' };
+      }
+
+      return { success: true, id: data.id };
+    } catch (error) {
+      console.error('Email send error:', error);
+      if (attempt === retries - 1) {
+        return { success: false, error: String(error) };
+      }
     }
-
-    return { success: true, id: data.id };
-  } catch (error) {
-    console.error('Email send error:', error);
-    return { success: false, error: String(error) };
   }
+
+  return { success: false, error: 'Max retries exceeded' };
 }
 
 /**
@@ -321,8 +335,8 @@ export async function sendDailyDigestToAll(params: {
       failed++;
     }
 
-    // Rate limit: wait 100ms between emails
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Rate limit: Resend allows 2 req/s, so wait 600ms between emails
+    await new Promise(resolve => setTimeout(resolve, 600));
   }
 
   return { sent, failed };
@@ -529,8 +543,8 @@ export async function send24HourDigest(): Promise<{ sent: number; failed: number
       failed++;
     }
 
-    // Rate limit: wait 100ms between emails
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Rate limit: Resend allows 2 req/s, so wait 600ms between emails
+    await new Promise(resolve => setTimeout(resolve, 600));
   }
 
   console.log(`[Email] 24-hour digest complete: ${sent} sent, ${failed} failed`);
