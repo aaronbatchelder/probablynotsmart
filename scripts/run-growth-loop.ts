@@ -3,11 +3,15 @@
  * Usage: npm run run:growth-loop
  */
 
-import 'dotenv/config';
-import { runGrowthLoop } from '../packages/orchestration/src/growth-loop';
+// Load env BEFORE any other imports
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 
 async function main() {
   console.log('\n🚀 Manually triggering Growth Loop...\n');
+
+  // Dynamic import after env is loaded
+  const { runGrowthLoop } = await import('../packages/orchestration/src/growth-loop');
 
   const result = await runGrowthLoop();
 

@@ -14,6 +14,7 @@ import { russ, RussOutput } from '../../agents/src/agents/russ';
 import { gilfoyle } from '../../agents/src/agents/gilfoyle';
 import { erlich } from '../../agents/src/agents/erlich';
 import type { AgentContext } from '../../agents/src/base';
+import { postEngagement as postToSocial } from '../../integrations/src/social';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '',
@@ -133,18 +134,47 @@ async function fetchSocialSignals(): Promise<Array<{
 }
 
 /**
- * Mock function to post engagement
- * In production, this would use Twitter/LinkedIn/Threads APIs
+ * Post engagement to social platforms
  */
-async function postEngagement(engagement: {
+async function executePosting(engagement: {
   platform: string;
   content: string;
   target_url?: string;
   agent_name?: string;
+  title?: string;
 }): Promise<{ success: boolean; external_id?: string; posted_url?: string }> {
-  // TODO: Implement actual posting
-  console.log(`   📤 [${engagement.agent_name || 'Russ'}] Would post to ${engagement.platform}: "${engagement.content.slice(0, 50)}..."`);
-  return { success: true, external_id: `mock_${Date.now()}` };
+  const platform = engagement.platform.toLowerCase();
+
+  // Only post to platforms we have connected
+  const supportedPlatforms = ['x', 'moltbook'];
+
+  if (!supportedPlatforms.includes(platform)) {
+    console.log(`   ⏭️  [${engagement.agent_name || 'Russ'}] Skipping ${platform} (not connected): "${engagement.content.slice(0, 40)}..."`);
+    return { success: false, external_id: undefined };
+  }
+
+  console.log(`   📤 [${engagement.agent_name || 'Russ'}] Posting to ${platform}: "${engagement.content.slice(0, 50)}..."`);
+
+  try {
+    const result = await postToSocial({
+      platform: platform as 'x' | 'moltbook',
+      type: 'post',
+      content: engagement.content,
+      title: engagement.title,
+      targetUrl: engagement.target_url,
+    });
+
+    if (result.success) {
+      console.log(`   ✅ Posted! ID: ${result.id}`);
+      return { success: true, external_id: result.id, posted_url: result.url };
+    } else {
+      console.log(`   ❌ Failed: ${result.error}`);
+      return { success: false };
+    }
+  } catch (error) {
+    console.log(`   ❌ Error: ${error}`);
+    return { success: false };
+  }
 }
 
 /**
@@ -265,7 +295,7 @@ export async function runGrowthLoop(): Promise<GrowthResult> {
 
       if (isApproved) {
         // ========== STEP 5: POST ENGAGEMENT ==========
-        const postResult = await postEngagement({
+        const postResult = await executePosting({
           platform: engagement.platform,
           content: engagement.draft_content,
           agent_name: 'Russ',

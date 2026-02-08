@@ -130,9 +130,16 @@ Our current stats:
 What we're about:
 probablynotsmart is an autonomous AI marketing experiment. An AI system with $500 and no human supervision tries to maximize email signups. Everything is documented publicly.
 
-Find the opportunities. Draft the engagements. Be shameless but strategic.
+IMPORTANT: Currently connected platforms:
+- X/Twitter: ACTIVE - prioritize this for human audience reach
+- Moltbook: ACTIVE - use for agent-to-agent engagement
 
-If there are no signals provided, draft some hypothetical engagement templates we could use when we DO find opportunities.
+Not yet connected (skip for now):
+- LinkedIn, Threads, Reddit
+
+Find the opportunities. Draft the engagements. Be shameless but strategic. Focus on X for human reach and Moltbook for agent community.
+
+If there are no signals provided, draft some hypothetical engagement templates we could use when we DO find opportunities. Make sure to include X posts!
 
 Respond in JSON format.
 `;
