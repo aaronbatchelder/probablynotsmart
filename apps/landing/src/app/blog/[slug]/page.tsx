@@ -6,8 +6,8 @@ import SubscribeGate from '../SubscribeGate';
 
 export const revalidate = 60;
 
-// How many words to show before the gate
-const PREVIEW_WORD_COUNT = 300;
+// How many characters to show before the gate (roughly 300 words)
+const PREVIEW_CHAR_COUNT = 1500;
 
 interface BlogPost {
   id: string;
@@ -56,72 +56,114 @@ async function checkAccess(token: string | undefined): Promise<boolean> {
   return !!data;
 }
 
-// Simple markdown to HTML (basic support)
+// Convert markdown to HTML
 function renderMarkdown(content: string): string {
-  return content
-    // Headers
+  let html = content
+    // Headers (must come before other replacements)
     .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-8 mb-3">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-10 mb-4">$1</h2>')
     .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-10 mb-4">$1</h1>')
     // Bold
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Italic (but not inside words)
+    .replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>')
     // Code blocks
     .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-[#1A1A1A] text-[#00ff88] p-4 rounded-lg overflow-x-auto my-4 font-mono text-sm"><code>$2</code></pre>')
     // Inline code
-    .replace(/`(.*?)`/g, '<code class="bg-[#F7F5F2] px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
+    .replace(/`([^`]+)`/g, '<code class="bg-[#F7F5F2] px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
     // Blockquotes
     .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-[#FF5C35] pl-4 italic text-[#6B6B6B] my-4">$1</blockquote>')
     // Unordered lists
-    .replace(/^\* (.*$)/gim, '<li class="ml-4">$1</li>')
-    .replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
+    .replace(/^[\*\-] (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
     // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-[#FF5C35] hover:underline">$1</a>')
-    // Paragraphs
-    .replace(/\n\n/g, '</p><p class="mb-4">')
-    // Line breaks
-    .replace(/\n/g, '<br>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-[#FF5C35] hover:underline">$1</a>');
+
+  // Handle paragraphs - split by double newlines
+  const paragraphs = html.split(/\n\n+/);
+  html = paragraphs
+    .map(p => {
+      p = p.trim();
+      if (!p) return '';
+      // Don't wrap if it's already a block element
+      if (p.startsWith('<h') || p.startsWith('<pre') || p.startsWith('<blockquote') || p.startsWith('<li')) {
+        return p;
+      }
+      // Replace single newlines with <br> within paragraphs
+      p = p.replace(/\n/g, '<br>');
+      return `<p class="mb-4">${p}</p>`;
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  // Wrap consecutive <li> elements in <ul>
+  html = html.replace(/(<li[^>]*>.*?<\/li>\n?)+/g, '<ul class="list-disc ml-6 mb-4">$&</ul>');
+
+  return html;
 }
 
-// Split content into preview and gated portions
-function splitContent(content: string): { preview: string; rest: string; hasMore: boolean } {
-  const words = content.split(/\s+/);
-
-  if (words.length <= PREVIEW_WORD_COUNT) {
+// Split content at a natural break point
+function splitContentAtBreak(content: string): { preview: string; rest: string; hasMore: boolean } {
+  if (content.length <= PREVIEW_CHAR_COUNT) {
     return { preview: content, rest: '', hasMore: false };
   }
 
-  // Find a good break point (end of sentence or paragraph)
-  let breakIndex = PREVIEW_WORD_COUNT;
-  const previewWords = words.slice(0, PREVIEW_WORD_COUNT);
-  const previewText = previewWords.join(' ');
+  // Look for a good break point within the preview range
+  const searchRange = content.slice(0, PREVIEW_CHAR_COUNT + 200);
 
-  // Try to break at end of paragraph
-  const lastParagraphBreak = previewText.lastIndexOf('\n\n');
-  if (lastParagraphBreak > previewText.length * 0.5) {
-    const preview = previewText.slice(0, lastParagraphBreak);
-    const rest = content.slice(lastParagraphBreak);
-    return { preview, rest, hasMore: true };
+  // Best: break at a section header (##)
+  const headerMatch = searchRange.match(/\n##\s/);
+  if (headerMatch && headerMatch.index && headerMatch.index > PREVIEW_CHAR_COUNT * 0.5) {
+    return {
+      preview: content.slice(0, headerMatch.index),
+      rest: content.slice(headerMatch.index),
+      hasMore: true,
+    };
   }
 
-  // Otherwise break at end of sentence
-  const lastSentenceEnd = Math.max(
-    previewText.lastIndexOf('. '),
-    previewText.lastIndexOf('! '),
-    previewText.lastIndexOf('? ')
+  // Good: break at double newline (paragraph)
+  let lastParagraph = -1;
+  let searchPos = 0;
+  while (true) {
+    const pos = content.indexOf('\n\n', searchPos);
+    if (pos === -1 || pos > PREVIEW_CHAR_COUNT) break;
+    lastParagraph = pos;
+    searchPos = pos + 2;
+  }
+
+  if (lastParagraph > PREVIEW_CHAR_COUNT * 0.5) {
+    return {
+      preview: content.slice(0, lastParagraph),
+      rest: content.slice(lastParagraph + 2),
+      hasMore: true,
+    };
+  }
+
+  // OK: break at end of sentence
+  const previewChunk = content.slice(0, PREVIEW_CHAR_COUNT);
+  const lastSentence = Math.max(
+    previewChunk.lastIndexOf('. '),
+    previewChunk.lastIndexOf('.\n'),
+    previewChunk.lastIndexOf('! '),
+    previewChunk.lastIndexOf('!\n'),
+    previewChunk.lastIndexOf('? '),
+    previewChunk.lastIndexOf('?\n')
   );
 
-  if (lastSentenceEnd > previewText.length * 0.5) {
-    const preview = previewText.slice(0, lastSentenceEnd + 1);
-    const rest = content.slice(lastSentenceEnd + 1);
-    return { preview, rest, hasMore: true };
+  if (lastSentence > PREVIEW_CHAR_COUNT * 0.5) {
+    return {
+      preview: content.slice(0, lastSentence + 1),
+      rest: content.slice(lastSentence + 2),
+      hasMore: true,
+    };
   }
 
-  // Fallback: just split at word count
-  const preview = previewWords.join(' ');
-  const rest = words.slice(PREVIEW_WORD_COUNT).join(' ');
-  return { preview, rest, hasMore: true };
+  // Fallback: break at word boundary near target
+  const breakPoint = content.lastIndexOf(' ', PREVIEW_CHAR_COUNT);
+  return {
+    preview: content.slice(0, breakPoint),
+    rest: content.slice(breakPoint + 1),
+    hasMore: true,
+  };
 }
 
 export default async function BlogPostPage({
@@ -143,8 +185,10 @@ export default async function BlogPostPage({
   // Strip the first H1 from content since we display title separately
   const contentWithoutTitle = post.content.replace(/^# .+\n\n?/, '');
 
-  // Split content for partial gating
-  const { preview, rest, hasMore } = splitContent(contentWithoutTitle);
+  // Split content BEFORE rendering markdown (to preserve structure)
+  const { preview, rest, hasMore } = splitContentAtBreak(contentWithoutTitle);
+
+  // Then render each part to HTML
   const previewHtml = renderMarkdown(preview);
   const restHtml = hasMore ? renderMarkdown(rest) : '';
 
@@ -188,7 +232,7 @@ export default async function BlogPostPage({
         {/* Preview content - always visible (for SEO and teaser) */}
         <div
           className="prose prose-lg max-w-none text-[#1A1A1A] leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${previewHtml}</p>` }}
+          dangerouslySetInnerHTML={{ __html: previewHtml }}
         />
 
         {/* Gated content */}
@@ -200,7 +244,7 @@ export default async function BlogPostPage({
         {hasMore && hasAccess && (
           <div
             className="prose prose-lg max-w-none text-[#1A1A1A] leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: `<p class="mb-4">${restHtml}</p>` }}
+            dangerouslySetInnerHTML={{ __html: restHtml }}
           />
         )}
 
