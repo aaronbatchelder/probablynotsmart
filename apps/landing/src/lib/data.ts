@@ -67,7 +67,9 @@ export async function getStats(): Promise<Stats> {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed');
 
-    const conversionRate = metricsData?.conversion_rate_total || 0;
+    const rawConversionRate = metricsData?.conversion_rate_total || 0;
+    // Cap at 100% - rates over 100% indicate tracking gaps, not real performance
+    const conversionRate = Math.min(rawConversionRate, 100);
     const remaining = budgetData?.remaining || 500;
     const humans = humanCount || 0;
     const agents = (agentEmailCount || 0) + (agentWebhookCount || 0);
