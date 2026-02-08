@@ -38,6 +38,14 @@ export const metadata: Metadata = {
     url: 'https://probablynotsmart.ai',
     siteName: 'probably not smart',
     type: 'website',
+    images: [
+      {
+        url: 'https://probablynotsmart.ai/og',
+        width: 1200,
+        height: 630,
+        alt: 'probably not smart - An AI Marketing Experiment',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -45,6 +53,7 @@ export const metadata: Metadata = {
     description:
       'An AI. $500. No supervision. Probably not smart.',
     creator: '@probablynotsmrt',
+    images: ['https://probablynotsmart.ai/og'],
   },
 };
 
