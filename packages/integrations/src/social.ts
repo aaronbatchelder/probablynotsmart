@@ -6,13 +6,20 @@ import {
   commentOnMoltbook,
   extractMoltbookPostId,
 } from './moltbook';
+import {
+  postTweet,
+  replyToTweet,
+  quoteTweet,
+  extractTweetId,
+} from './twitter';
 
 export interface PostEngagementParams {
-  platform: 'x' | 'linkedin' | 'threads' | 'moltbook';
+  platform: 'x' | 'linkedin' | 'threads' | 'moltbook' | 'reddit';
   type: 'reply' | 'quote_tweet' | 'comment' | 'post';
   targetUrl?: string;
   content: string;
   submolt?: string;
+  subreddit?: string;
 }
 
 export interface PostResult {
@@ -30,13 +37,27 @@ async function postToX(
   content: string,
   targetUrl?: string
 ): Promise<PostResult> {
-  // TODO: Implement X/Twitter API integration
-  console.log(`[X] Would ${type}: ${content}`);
-  if (targetUrl) console.log(`[X] Target: ${targetUrl}`);
-  return {
-    success: false,
-    error: 'X API not yet configured',
-  };
+  if (type === 'post') {
+    return postTweet(content);
+  }
+
+  if (type === 'reply' && targetUrl) {
+    const tweetId = extractTweetId(targetUrl);
+    if (!tweetId) {
+      return { success: false, error: 'Could not extract tweet ID from URL' };
+    }
+    return replyToTweet(content, tweetId);
+  }
+
+  if (type === 'quote_tweet' && targetUrl) {
+    const tweetId = extractTweetId(targetUrl);
+    if (!tweetId) {
+      return { success: false, error: 'Could not extract tweet ID from URL' };
+    }
+    return quoteTweet(content, tweetId);
+  }
+
+  return { success: false, error: 'Invalid type or missing targetUrl' };
 }
 
 async function postToLinkedIn(
@@ -67,10 +88,25 @@ async function postToThreads(
   };
 }
 
+async function postToReddit(
+  type: 'reply' | 'comment' | 'post',
+  content: string,
+  targetUrl?: string,
+  subreddit?: string
+): Promise<PostResult> {
+  // TODO: Implement Reddit API integration
+  console.log(`[Reddit] Would ${type} to r/${subreddit || 'unknown'}: ${content}`);
+  if (targetUrl) console.log(`[Reddit] Target: ${targetUrl}`);
+  return {
+    success: false,
+    error: 'Reddit API not yet configured',
+  };
+}
+
 export async function postEngagement(
   params: PostEngagementParams
 ): Promise<PostResult> {
-  const { platform, type, targetUrl, content, submolt } = params;
+  const { platform, type, targetUrl, content, submolt, subreddit } = params;
 
   try {
     switch (platform) {
@@ -93,6 +129,14 @@ export async function postEngagement(
           type as 'reply' | 'post',
           content,
           targetUrl
+        );
+
+      case 'reddit':
+        return await postToReddit(
+          type as 'reply' | 'comment' | 'post',
+          content,
+          targetUrl,
+          subreddit
         );
 
       case 'moltbook':
