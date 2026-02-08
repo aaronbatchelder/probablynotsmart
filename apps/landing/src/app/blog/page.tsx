@@ -39,6 +39,7 @@ async function getPosts(): Promise<BlogPost[]> {
   const { data, error } = await supabaseAdmin
     .from('published_posts')
     .select('id, slug, title, excerpt, content, published_at, run_number, post_type')
+    .order('published_at', { ascending: false })
     .limit(50);
 
   if (error) {
@@ -47,6 +48,17 @@ async function getPosts(): Promise<BlogPost[]> {
   }
 
   return data || [];
+}
+
+// Format date in user's local timezone
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York', // EST/EDT
+  });
 }
 
 export default async function BlogPage() {
@@ -88,11 +100,7 @@ export default async function BlogPage() {
                     </span>
                   )}
                   <span className="text-xs text-[#6B6B6B]">
-                    {new Date(post.published_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                    {formatDate(post.published_at)}
                   </span>
                 </div>
                 <Link href={`/blog/${post.slug}`}>

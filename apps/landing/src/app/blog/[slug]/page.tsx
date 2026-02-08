@@ -168,12 +168,14 @@ export default async function BlogPostPage({
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
+                timeZone: 'America/New_York',
               })}{' '}
               at{' '}
               {new Date(post.published_at).toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
                 hour12: true,
+                timeZone: 'America/New_York',
               })}
             </span>
           </div>
