@@ -106,8 +106,13 @@ async function saveGrowthAction(action: {
   erlich_check?: unknown;
   approved: boolean;
   external_id?: string;
+  agent_name?: string;
+  posted_url?: string;
 }) {
-  const { error } = await supabase.from('growth_actions').insert(action);
+  const { error } = await supabase.from('growth_actions').insert({
+    ...action,
+    agent_name: action.agent_name || 'Russ',
+  });
   if (error) console.error('Failed to save growth action:', error);
 }
 
@@ -135,9 +140,10 @@ async function postEngagement(engagement: {
   platform: string;
   content: string;
   target_url?: string;
-}): Promise<{ success: boolean; external_id?: string }> {
+  agent_name?: string;
+}): Promise<{ success: boolean; external_id?: string; posted_url?: string }> {
   // TODO: Implement actual posting
-  console.log(`   📤 Would post to ${engagement.platform}: "${engagement.content.slice(0, 50)}..."`);
+  console.log(`   📤 [${engagement.agent_name || 'Russ'}] Would post to ${engagement.platform}: "${engagement.content.slice(0, 50)}..."`);
   return { success: true, external_id: `mock_${Date.now()}` };
 }
 
@@ -235,16 +241,26 @@ export async function runGrowthLoop(): Promise<GrowthResult> {
 
       const isApproved = tacticsApproved && contentApproved;
 
-      // Save the action
+      // Determine action type based on engagement
+      const opportunity = russOutput.opportunities_found.find(o =>
+        o.url && engagement.opportunity_id?.includes(o.url.slice(-10))
+      ) || russOutput.opportunities_found[0];
+
+      const actionType = opportunity?.engagement_type === 'post' ? 'post' :
+                        opportunity?.engagement_type === 'comment' ? 'comment' :
+                        opportunity?.engagement_type || 'reply';
+
+      // Save the action with agent name
       await saveGrowthAction({
-        action_type: 'reply',
+        action_type: actionType,
         platform: engagement.platform,
-        target_url: russOutput.opportunities_found.find(o => o.url)?.url,
-        target_author: russOutput.opportunities_found.find(o => o.author)?.author,
+        target_url: opportunity?.url,
+        target_author: opportunity?.author,
         content: engagement.draft_content,
         gilfoyle_check: { approved: tacticsApproved, output: gilfoyleResult.output },
         erlich_check: erlichResult.output,
         approved: isApproved,
+        agent_name: 'Russ',
       });
 
       if (isApproved) {
@@ -252,11 +268,23 @@ export async function runGrowthLoop(): Promise<GrowthResult> {
         const postResult = await postEngagement({
           platform: engagement.platform,
           content: engagement.draft_content,
+          agent_name: 'Russ',
         });
 
         if (postResult.success) {
           approved++;
           console.log(`   ✅ Approved and posted`);
+
+          // Update the growth action with posted URL if available
+          if (postResult.posted_url) {
+            await supabase
+              .from('growth_actions')
+              .update({ posted_url: postResult.posted_url, external_id: postResult.external_id })
+              .eq('content', engagement.draft_content)
+              .eq('platform', engagement.platform)
+              .order('created_at', { ascending: false })
+              .limit(1);
+          }
         }
       } else {
         blocked++;

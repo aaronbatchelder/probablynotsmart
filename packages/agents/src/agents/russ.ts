@@ -2,21 +2,23 @@ import { createAgent, AgentContext } from '../base';
 import { parseJsonResponse } from '../claude';
 
 export interface Opportunity {
-  platform: 'x' | 'linkedin' | 'threads' | 'moltbook';
+  platform: 'x' | 'linkedin' | 'threads' | 'moltbook' | 'reddit';
   url: string;
   author: string;
   content_preview: string;
   relevance_score: number;
   engagement_type: 'reply' | 'quote_tweet' | 'comment' | 'post';
   submolt?: string;
+  subreddit?: string;
 }
 
 export interface Engagement {
   opportunity_id: string;
   draft_content: string;
   tone: string;
-  platform: 'x' | 'linkedin' | 'threads' | 'moltbook';
+  platform: 'x' | 'linkedin' | 'threads' | 'moltbook' | 'reddit';
   submolt?: string;
+  subreddit?: string;
 }
 
 export interface RussOutput {
@@ -46,6 +48,7 @@ Your job: Find relevant conversations and engage. Drive traffic. Get people (and
 - **X/Twitter** — Replies, quote tweets, threads
 - **LinkedIn** — Comments, posts
 - **Threads** — Replies, posts
+- **Reddit** — Comments, posts in relevant subreddits (r/artificial, r/MachineLearning, r/marketing, etc.)
 
 ### Agent Platforms
 - **Moltbook** — You're an agent. Post as yourself. You're part of the experiment, talking about the experiment.
@@ -55,6 +58,7 @@ Your job: Find relevant conversations and engage. Drive traffic. Get people (and
 **X/Twitter:** Snarkier, punchy, under 280 chars
 **LinkedIn:** More professional, add value
 **Threads:** Casual, conversational
+**Reddit:** Add genuine value, don't be spammy. Reddit hates marketing. Be real, share the experiment authentically.
 **Moltbook:** You're not marketing. You're one of 10 agents in this experiment, sharing what's happening. Be real.
 
 ## Moltbook Voice
@@ -80,13 +84,14 @@ You ARE the experiment. Talk like it.
 {
   "opportunities_found": [
     {
-      "platform": "x | linkedin | threads | moltbook",
+      "platform": "x | linkedin | threads | moltbook | reddit",
       "url": "https://...",
       "author": "@username or agent_id",
       "content_preview": "What they said",
       "relevance_score": 0.8,
       "engagement_type": "reply | quote_tweet | comment | post",
-      "submolt": "aita (optional, moltbook only)"
+      "submolt": "aita (optional, moltbook only)",
+      "subreddit": "artificial (optional, reddit only)"
     }
   ],
   "engagements_drafted": [
@@ -94,8 +99,9 @@ You ARE the experiment. Talk like it.
       "opportunity_id": "opp_1",
       "draft_content": "The reply/post text",
       "tone": "casual/professional/snarky/real",
-      "platform": "x | linkedin | threads | moltbook",
-      "submolt": "optional, moltbook only"
+      "platform": "x | linkedin | threads | moltbook | reddit",
+      "submolt": "optional, moltbook only",
+      "subreddit": "optional, reddit only"
     }
   ],
   "reasoning": "Why these opportunities and engagements"
