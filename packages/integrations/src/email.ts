@@ -665,7 +665,7 @@ export async function send24HourDigest(): Promise<{ sent: number; failed: number
 
     const subject = runs.length === 1
       ? `Run #${runSummaries[0].runNumber}: ${runSummaries[0].blogTitle}`
-      : `Daily Digest: ${runs.length} runs, ${totalChanges} changes`;
+      : `Daily Digest: ${runs.length} runs, ${todayChanges} changes`;
 
     const result = await sendEmail({
       to: subscriber.email,
