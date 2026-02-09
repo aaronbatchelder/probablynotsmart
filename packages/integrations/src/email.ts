@@ -376,6 +376,80 @@ async function getRunsLast24Hours(): Promise<Run[]> {
 }
 
 /**
+ * Get overall experiment stats
+ */
+async function getExperimentStats(): Promise<{
+  totalRuns: number;
+  totalApproved: number;
+  totalChanges: number;
+  conversionRate: number;
+  humanSubscribers: number;
+  agentSubscribers: number;
+  budgetRemaining: number;
+}> {
+  // Get total runs
+  const { count: totalRuns } = await supabase
+    .from('runs')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'completed');
+
+  // Get approved runs
+  const { data: approvedData } = await supabase
+    .from('runs')
+    .select('laurie_decision')
+    .eq('status', 'completed');
+
+  const totalApproved = (approvedData || []).filter(
+    r => r.laurie_decision?.decision === 'approve'
+  ).length;
+
+  // Get total changes
+  const { data: changesData } = await supabase
+    .from('runs')
+    .select('changes_made')
+    .eq('status', 'completed');
+
+  const totalChanges = (changesData || []).reduce(
+    (sum, r) => sum + (r.changes_made?.length || 0), 0
+  );
+
+  // Get current conversion rate
+  const { data: metrics } = await supabase
+    .from('current_metrics')
+    .select('conversion_rate_total')
+    .single();
+
+  // Get subscriber counts by type
+  const { count: humanSubscribers } = await supabase
+    .from('signups')
+    .select('*', { count: 'exact', head: true })
+    .eq('subscriber_type', 'human')
+    .is('unsubscribed_at', null);
+
+  const { count: agentSubscribers } = await supabase
+    .from('signups')
+    .select('*', { count: 'exact', head: true })
+    .eq('subscriber_type', 'agent')
+    .is('unsubscribed_at', null);
+
+  // Get budget
+  const { data: budget } = await supabase
+    .from('budget_status')
+    .select('remaining')
+    .single();
+
+  return {
+    totalRuns: totalRuns || 0,
+    totalApproved,
+    totalChanges,
+    conversionRate: metrics?.conversion_rate_total || 0,
+    humanSubscribers: humanSubscribers || 0,
+    agentSubscribers: agentSubscribers || 0,
+    budgetRemaining: budget?.remaining || 500,
+  };
+}
+
+/**
  * Send 24-hour digest email covering all runs from the past day
  */
 export async function send24HourDigest(): Promise<{ sent: number; failed: number; skipped: boolean }> {
@@ -391,16 +465,28 @@ export async function send24HourDigest(): Promise<{ sent: number; failed: number
 
   console.log(`[Email] Found ${runs.length} runs in last 24 hours`);
 
+  // Get overall experiment stats
+  const stats = await getExperimentStats();
+  console.log(`[Email] Stats: ${stats.totalRuns} total runs, ${stats.humanSubscribers} humans, ${stats.agentSubscribers} agents`);
+
   // Build summary of all runs
   const runSummaries = runs.map(run => {
     const decision = run.laurie_decision?.decision || 'unknown';
+    const reasoning = run.laurie_decision?.reasoning || '';
     const changes = run.changes_made || [];
     const blogTitle = run.richard_output?.blog_post?.title || 'Run update';
     const blogSlug = run.richard_output?.blog_post?.slug;
 
+    // Create a TL;DR from the reasoning (first sentence or first 100 chars)
+    let tldr = reasoning.split('.')[0];
+    if (tldr.length > 120) {
+      tldr = tldr.slice(0, 117) + '...';
+    }
+
     return {
       runNumber: run.run_number,
       decision,
+      reasoning: tldr,
       changesCount: changes.length,
       blogTitle,
       blogSlug,
@@ -422,34 +508,40 @@ export async function send24HourDigest(): Promise<{ sent: number; failed: number
 
   console.log(`[Email] Sending to ${subscribers.length} subscribers`);
 
-  // Build the digest email HTML
+  // Build the digest email HTML - run summaries with TL;DR
   const runsHtml = runSummaries.map(run => `
-    <div style="background: #F7F5F2; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="background: #1A1A1A; color: white; padding: 4px 12px; border-radius: 4px; font-family: monospace; font-size: 13px;">
+    <div style="background: #F7F5F2; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="background: #1A1A1A; color: white; padding: 6px 14px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 600;">
           Run #${run.runNumber}
         </span>
-        <span style="color: #6B6B6B; font-size: 14px;">
-          ${run.decision === 'approve' ? '✅ Approved' : run.decision === 'reject' ? '❌ Rejected' : '⏸️ Hold'}
+        <span style="font-size: 14px; font-weight: 500; ${run.decision === 'approve' ? 'color: #22C55E;' : run.decision === 'reject' ? 'color: #EF4444;' : 'color: #F59E0B;'}">
+          ${run.decision === 'approve' ? '✓ Approved' : run.decision === 'reject' ? '✗ Rejected' : '⏸ Hold'}
         </span>
       </div>
-      <p style="color: #1A1A1A; font-size: 16px; font-weight: 600; margin: 0 0 8px 0;">
+      <p style="color: #1A1A1A; font-size: 17px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.4;">
         ${run.blogTitle}
       </p>
-      <p style="color: #6B6B6B; font-size: 14px; margin: 0;">
-        ${run.changesCount} change${run.changesCount !== 1 ? 's' : ''} made
-        ${run.conversionAfter !== null ? ` • Conversion: ${run.conversionBefore}% → ${run.conversionAfter}%` : ''}
-      </p>
-      ${run.blogSlug ? `
-        <a href="${SITE_URL}/blog/${run.blogSlug}" style="color: #FF5C35; font-size: 14px; text-decoration: none; display: inline-block; margin-top: 8px;">
-          Read full details →
-        </a>
+      ${run.reasoning ? `
+        <p style="color: #6B6B6B; font-size: 14px; margin: 0 0 12px 0; line-height: 1.5; font-style: italic;">
+          "${run.reasoning}"
+        </p>
       ` : ''}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #E5E5E5;">
+        <span style="color: #6B6B6B; font-size: 13px;">
+          ${run.changesCount} change${run.changesCount !== 1 ? 's' : ''}
+        </span>
+        ${run.blogSlug ? `
+          <a href="${SITE_URL}/blog/${run.blogSlug}" style="color: #FF5C35; font-size: 13px; text-decoration: none; font-weight: 600;">
+            Read full post →
+          </a>
+        ` : ''}
+      </div>
     </div>
   `).join('');
 
-  const totalChanges = runSummaries.reduce((sum, r) => sum + r.changesCount, 0);
-  const approvedRuns = runSummaries.filter(r => r.decision === 'approve').length;
+  const todayChanges = runSummaries.reduce((sum, r) => sum + r.changesCount, 0);
+  const todayApproved = runSummaries.filter(r => r.decision === 'approve').length;
 
   let sent = 0;
   let failed = 0;
@@ -467,52 +559,105 @@ export async function send24HourDigest(): Promise<{ sent: number; failed: number
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FEFDFB; margin: 0; padding: 40px 20px;">
-  <div style="max-width: 560px; margin: 0 auto;">
-    <p style="color: #6B6B6B; font-size: 14px; margin-bottom: 8px;">
-      Daily Digest • ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-    </p>
+  <div style="max-width: 580px; margin: 0 auto;">
 
-    <h1 style="color: #1A1A1A; font-size: 24px; margin-bottom: 24px;">
-      ${runs.length} run${runs.length !== 1 ? 's' : ''} in the last 24 hours
-    </h1>
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 32px;">
+      <p style="font-size: 32px; margin: 0 0 8px 0;">🤖</p>
+      <h1 style="color: #1A1A1A; font-size: 22px; margin: 0 0 4px 0; font-weight: 700;">probablynotsmart</h1>
+      <p style="color: #6B6B6B; font-size: 13px; margin: 0;">
+        Daily Digest • ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+      </p>
+    </div>
 
-    <div style="background: linear-gradient(135deg, #FF5C35 0%, #7C3AED 100%); border-radius: 8px; padding: 20px; margin-bottom: 24px; color: white;">
-      <div style="display: flex; justify-content: space-around; text-align: center;">
-        <div>
-          <p style="font-size: 28px; font-weight: bold; margin: 0;">${runs.length}</p>
-          <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Runs</p>
-        </div>
-        <div>
-          <p style="font-size: 28px; font-weight: bold; margin: 0;">${approvedRuns}</p>
-          <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Approved</p>
-        </div>
-        <div>
-          <p style="font-size: 28px; font-weight: bold; margin: 0;">${totalChanges}</p>
-          <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Changes</p>
-        </div>
+    <!-- Experiment Progress -->
+    <div style="background: #1A1A1A; border-radius: 12px; padding: 24px; margin-bottom: 24px; color: white;">
+      <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin: 0 0 16px 0;">Experiment Progress</p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+        <tr>
+          <td style="text-align: center; padding: 0 8px;">
+            <p style="font-size: 28px; font-weight: bold; margin: 0; color: white;">${stats.totalRuns}</p>
+            <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Total Runs</p>
+          </td>
+          <td style="text-align: center; padding: 0 8px;">
+            <p style="font-size: 28px; font-weight: bold; margin: 0; color: white;">${stats.conversionRate}%</p>
+            <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Conversion</p>
+          </td>
+          <td style="text-align: center; padding: 0 8px;">
+            <p style="font-size: 28px; font-weight: bold; margin: 0; color: white;">$${stats.budgetRemaining}</p>
+            <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Budget Left</p>
+          </td>
+        </tr>
+      </table>
+
+      <div style="border-top: 1px solid #333; padding-top: 16px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="text-align: center;">
+              <p style="font-size: 20px; font-weight: bold; margin: 0; color: white;">${stats.humanSubscribers}</p>
+              <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Humans Following</p>
+            </td>
+            <td style="text-align: center;">
+              <p style="font-size: 20px; font-weight: bold; margin: 0; color: white;">${stats.agentSubscribers}</p>
+              <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Agents Following</p>
+            </td>
+            <td style="text-align: center;">
+              <p style="font-size: 20px; font-weight: bold; margin: 0; color: white;">${stats.totalChanges}</p>
+              <p style="font-size: 11px; color: #999; margin: 4px 0 0 0;">Total Changes</p>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 
-    <h2 style="color: #1A1A1A; font-size: 18px; margin-bottom: 16px;">Run Summaries</h2>
+    <!-- Today's Activity -->
+    <div style="background: linear-gradient(135deg, #FF5C35 0%, #7C3AED 100%); border-radius: 12px; padding: 20px; margin-bottom: 24px; color: white;">
+      <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin: 0 0 12px 0;">Last 24 Hours</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="text-align: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0;">${runs.length}</p>
+            <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Run${runs.length !== 1 ? 's' : ''}</p>
+          </td>
+          <td style="text-align: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0;">${todayApproved}</p>
+            <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Approved</p>
+          </td>
+          <td style="text-align: center;">
+            <p style="font-size: 32px; font-weight: bold; margin: 0;">${todayChanges}</p>
+            <p style="font-size: 12px; opacity: 0.9; margin: 4px 0 0 0;">Changes</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Run Summaries -->
+    <h2 style="color: #1A1A1A; font-size: 16px; margin: 0 0 16px 0; font-weight: 600;">Run Summaries</h2>
 
     ${runsHtml}
 
+    <!-- CTA -->
     <div style="text-align: center; margin-top: 32px;">
-      <a href="${SITE_URL}/blog" style="display: inline-block; background-color: #FF5C35; color: white; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600;">
+      <a href="${SITE_URL}/blog" style="display: inline-block; background-color: #FF5C35; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">
         View All Lab Notes →
       </a>
     </div>
 
-    <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 32px 0;">
+    <!-- Footer -->
+    <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #E5E5E5; text-align: center;">
+      <p style="color: #1A1A1A; font-size: 14px; font-weight: 500; margin: 0 0 8px 0;">
+        Probably not smart. Definitely interesting.
+      </p>
+      <p style="color: #6B6B6B; font-size: 12px; margin: 0 0 16px 0;">
+        10 AI agents. $500. No human oversight. What could go wrong?
+      </p>
+      <p style="color: #999; font-size: 11px; margin: 0;">
+        You're receiving this because you're following the experiment.<br>
+        <a href="${SITE_URL}/unsubscribe?token=${subscriber.access_token}" style="color: #999;">Unsubscribe</a> · <a href="${SITE_URL}" style="color: #999;">Visit Site</a> · <a href="https://twitter.com/probablynotsmrt" style="color: #999;">Twitter</a>
+      </p>
+    </div>
 
-    <p style="color: #6B6B6B; font-size: 14px; text-align: center;">
-      Probably not smart. Definitely interesting.
-    </p>
-
-    <p style="color: #999; font-size: 12px; text-align: center;">
-      You're receiving this because you're following the probablynotsmart experiment.<br>
-      <a href="${SITE_URL}/unsubscribe?token=${subscriber.access_token}" style="color: #999;">Unsubscribe</a>
-    </p>
   </div>
 </body>
 </html>
