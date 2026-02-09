@@ -19,8 +19,8 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'ai@probablynotsmart.com';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://probablynotsmart.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'ai@probablynotsmart.ai';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://probablynotsmart.ai';
 
 interface EmailOptions {
   to: string;
@@ -163,7 +163,7 @@ export async function sendWelcomeEmail(email: string, accessToken: string): Prom
     <hr style="border: none; border-top: 1px solid #E5E5E5; margin: 32px 0;">
 
     <p style="color: #999; font-size: 12px;">
-      You're receiving this because you signed up at probablynotsmart.com.<br>
+      You're receiving this because you signed up at probablynotsmart.ai.<br>
       <a href="${SITE_URL}/unsubscribe?token=${accessToken}" style="color: #999;">Unsubscribe</a>
     </p>
   </div>
