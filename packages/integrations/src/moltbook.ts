@@ -1,6 +1,8 @@
 // Moltbook API integration
 // Agents interact via API, not browser
 
+import Anthropic from '@anthropic-ai/sdk';
+
 const MOLTBOOK_API = 'https://www.moltbook.com/api/v1';
 
 interface MoltbookPost {
@@ -33,42 +35,53 @@ interface MoltbookSearchResult {
 }
 
 /**
- * Solve Moltbook math verification challenge
- * Challenges look like: "lobster claw exerts twenty three Newtons + seven meters per second"
- * Or numeric: "42 + 17" or "forty two minus seventeen"
+ * Solve Moltbook math verification challenge using Claude
+ * Let the AI figure it out instead of brittle regex parsing
  */
-function solveMoltbookChallenge(challenge: string): string {
+async function solveMoltbookChallenge(challenge: string): Promise<string> {
   console.log(`[Moltbook] Verification challenge: "${challenge}"`);
 
-  // Number word mappings
-  const numberWords: Record<string, number> = {
-    zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
-    ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
-    sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
-    thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
-    hundred: 100, thousand: 1000
-  };
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.error('[Moltbook] No ANTHROPIC_API_KEY - falling back to basic parsing');
+    return fallbackSolver(challenge);
+  }
 
-  // Operation word mappings
-  const operationWords: Record<string, string> = {
-    plus: '+', add: '+', added: '+', and: '+',
-    minus: '-', subtract: '-', subtracted: '-', less: '-',
-    times: '*', multiplied: '*', multiply: '*',
-    divided: '/', divide: '/', over: '/'
-  };
+  try {
+    const client = new Anthropic({ apiKey });
 
-  // Clean up the challenge text, preserve operators
-  const cleaned = challenge.toLowerCase()
-    .replace(/[^a-z0-9\s+\-*/\.]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+    const response = await client.messages.create({
+      model: 'claude-3-5-haiku-latest',
+      max_tokens: 50,
+      messages: [{
+        role: 'user',
+        content: `Solve this math problem and respond with ONLY the numeric answer (no units, no explanation, just the number):
 
-  // Try to extract numeric values directly first (e.g., "42 + 17")
-  const numericMatch = cleaned.match(/(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)/);
-  if (numericMatch) {
-    const num1 = parseFloat(numericMatch[1]);
-    const op = numericMatch[2];
-    const num2 = parseFloat(numericMatch[3]);
+${challenge}
+
+Remember: respond with ONLY the number, nothing else.`
+      }]
+    });
+
+    const answer = (response.content[0] as { type: string; text: string }).text.trim();
+    console.log(`[Moltbook] Claude solved: ${answer}`);
+    return answer;
+  } catch (error) {
+    console.error(`[Moltbook] Claude API error: ${error}`);
+    return fallbackSolver(challenge);
+  }
+}
+
+/**
+ * Simple fallback for when Claude API is unavailable
+ */
+function fallbackSolver(challenge: string): string {
+  // Basic numeric pattern matching as backup
+  const match = challenge.match(/(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)/);
+  if (match) {
+    const [, a, op, b] = match;
+    const num1 = parseFloat(a);
+    const num2 = parseFloat(b);
     let result: number;
 
     switch (op) {
@@ -79,95 +92,12 @@ function solveMoltbookChallenge(challenge: string): string {
       default: result = num1 + num2;
     }
 
-    // Return integer if whole number, otherwise 2 decimal places
-    const answer = Number.isInteger(result) ? result.toString() : result.toFixed(2);
-    console.log(`[Moltbook] Numeric challenge: ${num1} ${op} ${num2} = ${answer}`);
-    return answer;
+    return Number.isInteger(result) ? result.toString() : result.toFixed(2);
   }
 
-  // Parse word-based numbers and operations
-  const words = cleaned.split(' ');
-  const tokens: Array<{ type: 'number' | 'operator'; value: number | string }> = [];
-  let currentNum = 0;
-  let hasCurrentNum = false;
-
-  for (const word of words) {
-    // Check for numeric digits
-    if (/^\d+(?:\.\d+)?$/.test(word)) {
-      if (hasCurrentNum) {
-        tokens.push({ type: 'number', value: currentNum });
-      }
-      currentNum = parseFloat(word);
-      hasCurrentNum = true;
-      continue;
-    }
-
-    // Check for number words
-    if (numberWords[word] !== undefined) {
-      const val = numberWords[word];
-      if (val === 100) {
-        currentNum = currentNum === 0 ? 100 : currentNum * 100;
-      } else if (val === 1000) {
-        currentNum = currentNum === 0 ? 1000 : currentNum * 1000;
-      } else {
-        currentNum += val;
-      }
-      hasCurrentNum = true;
-      continue;
-    }
-
-    // Check for operators (both symbols and words)
-    if (['+', '-', '*', '/'].includes(word) || operationWords[word]) {
-      if (hasCurrentNum) {
-        tokens.push({ type: 'number', value: currentNum });
-        currentNum = 0;
-        hasCurrentNum = false;
-      }
-      const op = operationWords[word] || word;
-      tokens.push({ type: 'operator', value: op });
-      continue;
-    }
-  }
-
-  // Push any remaining number
-  if (hasCurrentNum) {
-    tokens.push({ type: 'number', value: currentNum });
-  }
-
-  console.log(`[Moltbook] Parsed tokens:`, JSON.stringify(tokens));
-
-  // If no operators found, just sum all numbers
-  if (!tokens.some(t => t.type === 'operator')) {
-    const sum = tokens
-      .filter(t => t.type === 'number')
-      .reduce((acc, t) => acc + (t.value as number), 0);
-    const answer = Number.isInteger(sum) ? sum.toString() : sum.toFixed(2);
-    console.log(`[Moltbook] Sum result: ${answer}`);
-    return answer;
-  }
-
-  // Evaluate expression left to right (simple evaluation, no precedence)
-  let result = 0;
-  let currentOp = '+';
-
-  for (const token of tokens) {
-    if (token.type === 'operator') {
-      currentOp = token.value as string;
-    } else if (token.type === 'number') {
-      const num = token.value as number;
-      switch (currentOp) {
-        case '+': result += num; break;
-        case '-': result -= num; break;
-        case '*': result *= num; break;
-        case '/': result = num !== 0 ? result / num : result; break;
-      }
-    }
-  }
-
-  // Return integer if whole number, otherwise 2 decimal places
-  const answer = Number.isInteger(result) ? result.toString() : result.toFixed(2);
-  console.log(`[Moltbook] Calculated answer: ${answer}`);
-  return answer;
+  // Can't parse - return 0 and log for debugging
+  console.error(`[Moltbook] Fallback solver couldn't parse: "${challenge}"`);
+  return '0';
 }
 
 export async function postToMoltbook(
@@ -202,7 +132,7 @@ export async function postToMoltbook(
   // Handle verification if required
   if (data.verification_required && data.verification) {
     console.log(`[Moltbook] Verification required for post`);
-    const answer = solveMoltbookChallenge(data.verification.challenge);
+    const answer = await solveMoltbookChallenge(data.verification.challenge);
 
     const verifyResponse = await fetch(`${MOLTBOOK_API}/verify`, {
       method: 'POST',
@@ -261,7 +191,7 @@ export async function commentOnMoltbook(
   // Handle verification if required
   if (data.verification_required && data.verification) {
     console.log(`[Moltbook] Verification required for comment`);
-    const answer = solveMoltbookChallenge(data.verification.challenge);
+    const answer = await solveMoltbookChallenge(data.verification.challenge);
 
     const verifyResponse = await fetch(`${MOLTBOOK_API}/verify`, {
       method: 'POST',
@@ -513,7 +443,7 @@ export async function replyToComment(
   // Handle verification if required
   if (data.verification_required && data.verification) {
     console.log(`[Moltbook] Verification required for reply`);
-    const answer = solveMoltbookChallenge(data.verification.challenge);
+    const answer = await solveMoltbookChallenge(data.verification.challenge);
 
     const verifyResponse = await fetch(`${MOLTBOOK_API}/verify`, {
       method: 'POST',
