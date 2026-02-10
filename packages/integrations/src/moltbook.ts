@@ -35,9 +35,12 @@ interface MoltbookSearchResult {
 /**
  * Solve Moltbook math verification challenge
  * Challenges look like: "lobster claw exerts twenty three Newtons + seven meters per second"
+ * Or numeric: "42 + 17" or "forty two minus seventeen"
  */
 function solveMoltbookChallenge(challenge: string): string {
-  // Extract numbers from the weird formatting
+  console.log(`[Moltbook] Verification challenge: "${challenge}"`);
+
+  // Number word mappings
   const numberWords: Record<string, number> = {
     zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
     ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
@@ -46,43 +49,125 @@ function solveMoltbookChallenge(challenge: string): string {
     hundred: 100, thousand: 1000
   };
 
-  // Clean up the challenge text
+  // Operation word mappings
+  const operationWords: Record<string, string> = {
+    plus: '+', add: '+', added: '+', and: '+',
+    minus: '-', subtract: '-', subtracted: '-', less: '-',
+    times: '*', multiplied: '*', multiply: '*',
+    divided: '/', divide: '/', over: '/'
+  };
+
+  // Clean up the challenge text, preserve operators
   const cleaned = challenge.toLowerCase()
-    .replace(/[^a-z0-9\s+\-*/]/g, ' ')
+    .replace(/[^a-z0-9\s+\-*/\.]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Find all number words and convert
-  const numbers: number[] = [];
-  let currentNum = 0;
+  // Try to extract numeric values directly first (e.g., "42 + 17")
+  const numericMatch = cleaned.match(/(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)/);
+  if (numericMatch) {
+    const num1 = parseFloat(numericMatch[1]);
+    const op = numericMatch[2];
+    const num2 = parseFloat(numericMatch[3]);
+    let result: number;
 
+    switch (op) {
+      case '+': result = num1 + num2; break;
+      case '-': result = num1 - num2; break;
+      case '*': result = num1 * num2; break;
+      case '/': result = num2 !== 0 ? num1 / num2 : 0; break;
+      default: result = num1 + num2;
+    }
+
+    // Return integer if whole number, otherwise 2 decimal places
+    const answer = Number.isInteger(result) ? result.toString() : result.toFixed(2);
+    console.log(`[Moltbook] Numeric challenge: ${num1} ${op} ${num2} = ${answer}`);
+    return answer;
+  }
+
+  // Parse word-based numbers and operations
   const words = cleaned.split(' ');
+  const tokens: Array<{ type: 'number' | 'operator'; value: number | string }> = [];
+  let currentNum = 0;
+  let hasCurrentNum = false;
+
   for (const word of words) {
+    // Check for numeric digits
+    if (/^\d+(?:\.\d+)?$/.test(word)) {
+      if (hasCurrentNum) {
+        tokens.push({ type: 'number', value: currentNum });
+      }
+      currentNum = parseFloat(word);
+      hasCurrentNum = true;
+      continue;
+    }
+
+    // Check for number words
     if (numberWords[word] !== undefined) {
       const val = numberWords[word];
       if (val === 100) {
         currentNum = currentNum === 0 ? 100 : currentNum * 100;
       } else if (val === 1000) {
         currentNum = currentNum === 0 ? 1000 : currentNum * 1000;
-      } else if (val >= 20 && val <= 90) {
-        currentNum += val;
       } else {
         currentNum += val;
       }
-    } else if (word === '+' || word === 'plus') {
-      if (currentNum > 0) {
-        numbers.push(currentNum);
+      hasCurrentNum = true;
+      continue;
+    }
+
+    // Check for operators (both symbols and words)
+    if (['+', '-', '*', '/'].includes(word) || operationWords[word]) {
+      if (hasCurrentNum) {
+        tokens.push({ type: 'number', value: currentNum });
         currentNum = 0;
+        hasCurrentNum = false;
+      }
+      const op = operationWords[word] || word;
+      tokens.push({ type: 'operator', value: op });
+      continue;
+    }
+  }
+
+  // Push any remaining number
+  if (hasCurrentNum) {
+    tokens.push({ type: 'number', value: currentNum });
+  }
+
+  console.log(`[Moltbook] Parsed tokens:`, JSON.stringify(tokens));
+
+  // If no operators found, just sum all numbers
+  if (!tokens.some(t => t.type === 'operator')) {
+    const sum = tokens
+      .filter(t => t.type === 'number')
+      .reduce((acc, t) => acc + (t.value as number), 0);
+    const answer = Number.isInteger(sum) ? sum.toString() : sum.toFixed(2);
+    console.log(`[Moltbook] Sum result: ${answer}`);
+    return answer;
+  }
+
+  // Evaluate expression left to right (simple evaluation, no precedence)
+  let result = 0;
+  let currentOp = '+';
+
+  for (const token of tokens) {
+    if (token.type === 'operator') {
+      currentOp = token.value as string;
+    } else if (token.type === 'number') {
+      const num = token.value as number;
+      switch (currentOp) {
+        case '+': result += num; break;
+        case '-': result -= num; break;
+        case '*': result *= num; break;
+        case '/': result = num !== 0 ? result / num : result; break;
       }
     }
   }
-  if (currentNum > 0) {
-    numbers.push(currentNum);
-  }
 
-  // Sum all numbers found
-  const result = numbers.reduce((a, b) => a + b, 0);
-  return result.toFixed(2);
+  // Return integer if whole number, otherwise 2 decimal places
+  const answer = Number.isInteger(result) ? result.toString() : result.toFixed(2);
+  console.log(`[Moltbook] Calculated answer: ${answer}`);
+  return answer;
 }
 
 export async function postToMoltbook(
@@ -116,6 +201,7 @@ export async function postToMoltbook(
 
   // Handle verification if required
   if (data.verification_required && data.verification) {
+    console.log(`[Moltbook] Verification required for post`);
     const answer = solveMoltbookChallenge(data.verification.challenge);
 
     const verifyResponse = await fetch(`${MOLTBOOK_API}/verify`, {
@@ -131,7 +217,11 @@ export async function postToMoltbook(
     });
 
     if (!verifyResponse.ok) {
-      console.warn('[Moltbook] Verification failed, post may be pending');
+      const verifyError = await verifyResponse.text();
+      console.error(`[Moltbook] Verification failed: ${verifyResponse.status} - ${verifyError}`);
+      console.error(`[Moltbook] Challenge was: "${data.verification.challenge}", our answer was: "${answer}"`);
+    } else {
+      console.log(`[Moltbook] Verification succeeded with answer: ${answer}`);
     }
   }
 
@@ -170,9 +260,10 @@ export async function commentOnMoltbook(
 
   // Handle verification if required
   if (data.verification_required && data.verification) {
+    console.log(`[Moltbook] Verification required for comment`);
     const answer = solveMoltbookChallenge(data.verification.challenge);
 
-    await fetch(`${MOLTBOOK_API}/verify`, {
+    const verifyResponse = await fetch(`${MOLTBOOK_API}/verify`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -183,6 +274,14 @@ export async function commentOnMoltbook(
         answer: answer,
       }),
     });
+
+    if (!verifyResponse.ok) {
+      const verifyError = await verifyResponse.text();
+      console.error(`[Moltbook] Comment verification failed: ${verifyResponse.status} - ${verifyError}`);
+      console.error(`[Moltbook] Challenge was: "${data.verification.challenge}", our answer was: "${answer}"`);
+    } else {
+      console.log(`[Moltbook] Comment verification succeeded with answer: ${answer}`);
+    }
   }
 
   return { id: data.comment?.id || data.id };
@@ -413,9 +512,10 @@ export async function replyToComment(
 
   // Handle verification if required
   if (data.verification_required && data.verification) {
+    console.log(`[Moltbook] Verification required for reply`);
     const answer = solveMoltbookChallenge(data.verification.challenge);
 
-    await fetch(`${MOLTBOOK_API}/verify`, {
+    const verifyResponse = await fetch(`${MOLTBOOK_API}/verify`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -426,6 +526,14 @@ export async function replyToComment(
         answer: answer,
       }),
     });
+
+    if (!verifyResponse.ok) {
+      const verifyError = await verifyResponse.text();
+      console.error(`[Moltbook] Reply verification failed: ${verifyResponse.status} - ${verifyError}`);
+      console.error(`[Moltbook] Challenge was: "${data.verification.challenge}", our answer was: "${answer}"`);
+    } else {
+      console.log(`[Moltbook] Reply verification succeeded with answer: ${answer}`);
+    }
   }
 
   return { id: data.comment?.id || data.id };
