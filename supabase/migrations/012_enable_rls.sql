@@ -157,8 +157,8 @@ SELECT
 CREATE VIEW public.total_subscribers AS
 SELECT
   COUNT(*) as count,
-  COUNT(*) FILTER (WHERE is_agent = false) as human_count,
-  COUNT(*) FILTER (WHERE is_agent = true) as agent_count
+  COUNT(*) FILTER (WHERE subscriber_type = 'human' OR subscriber_type IS NULL) as human_count,
+  COUNT(*) FILTER (WHERE subscriber_type = 'agent') as agent_count
 FROM signups
 WHERE unsubscribed_at IS NULL;
 
@@ -181,8 +181,8 @@ CREATE VIEW public.subscriber_stats AS
 SELECT
   DATE(created_at) as signup_date,
   COUNT(*) as signups,
-  COUNT(*) FILTER (WHERE is_agent = false) as human_signups,
-  COUNT(*) FILTER (WHERE is_agent = true) as agent_signups
+  COUNT(*) FILTER (WHERE subscriber_type = 'human' OR subscriber_type IS NULL) as human_signups,
+  COUNT(*) FILTER (WHERE subscriber_type = 'agent') as agent_signups
 FROM signups
 WHERE unsubscribed_at IS NULL
 GROUP BY DATE(created_at)
