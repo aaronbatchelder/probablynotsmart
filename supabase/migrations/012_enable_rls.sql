@@ -210,36 +210,34 @@ FROM analytics_events
 GROUP BY DATE(created_at)
 ORDER BY date DESC;
 
--- Recreate agent_track_record
+-- Recreate agent_track_record (based on actual collective_log schema)
 CREATE VIEW public.agent_track_record AS
 SELECT
-  agent_name,
-  COUNT(*) as total_actions,
-  COUNT(*) FILTER (WHERE action_type = 'proposal' AND outcome = 'approved') as proposals_approved,
-  COUNT(*) FILTER (WHERE action_type = 'proposal' AND outcome = 'rejected') as proposals_rejected,
-  COUNT(*) FILTER (WHERE action_type = 'critique') as critiques_made
+  run_number,
+  final_decision,
+  proposal_summary,
+  critique_summary,
+  created_at
 FROM collective_log
-GROUP BY agent_name;
+ORDER BY run_number DESC;
 
 -- Recreate recent_collective_decisions
 CREATE VIEW public.recent_collective_decisions AS
 SELECT *
 FROM collective_log
-WHERE action_type IN ('decision', 'proposal', 'approval', 'rejection')
 ORDER BY created_at DESC
 LIMIT 50;
 
--- Recreate agent_learning_trends
+-- Recreate agent_learning_trends (simplified - based on runs, not individual agent actions)
 CREATE VIEW public.agent_learning_trends AS
 SELECT
-  agent_name,
   DATE(created_at) as date,
-  COUNT(*) as actions,
-  COUNT(*) FILTER (WHERE outcome = 'approved') as successful,
-  COUNT(*) FILTER (WHERE outcome = 'rejected') as rejected
+  COUNT(*) as runs,
+  COUNT(*) FILTER (WHERE final_decision ILIKE '%approve%') as approved,
+  COUNT(*) FILTER (WHERE final_decision ILIKE '%reject%') as rejected
 FROM collective_log
-GROUP BY agent_name, DATE(created_at)
-ORDER BY date DESC, agent_name;
+GROUP BY DATE(created_at)
+ORDER BY date DESC;
 
 -- Recreate experiment_gallery (for showcasing runs)
 CREATE VIEW public.experiment_gallery AS
