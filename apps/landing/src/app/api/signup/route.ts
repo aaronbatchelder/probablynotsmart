@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, source, referrer } = body;
+    const { email, source, referrer, refCode } = body;
 
     if (!email) {
       return NextResponse.json(
@@ -131,6 +131,21 @@ export async function POST(request: NextRequest) {
     // Generate access token (in case DB trigger doesn't exist)
     const accessToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
 
+    // Look up referrer agent if refCode provided
+    let referredById: string | null = null;
+    if (refCode) {
+      const { data: referrerAgent } = await supabaseAdmin
+        .from('agent_referrers')
+        .select('id')
+        .eq('code', refCode)
+        .eq('is_active', true)
+        .single();
+
+      if (referrerAgent) {
+        referredById = referrerAgent.id;
+      }
+    }
+
     // Insert signup - only use core fields that definitely exist
     console.log('Inserting signup for:', email.toLowerCase().trim());
 
@@ -149,6 +164,8 @@ export async function POST(request: NextRequest) {
           utm_medium,
           utm_campaign,
           access_token: accessToken,
+          referred_by: referredById,
+          referral_code: refCode || null,
         })
         .select()
         .single();

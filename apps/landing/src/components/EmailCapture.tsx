@@ -1,11 +1,21 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 
 export default function EmailCapture() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  // Capture ref param from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setRefCode(ref);
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -24,6 +34,7 @@ export default function EmailCapture() {
           email,
           source: 'landing',
           referrer: document.referrer || null,
+          refCode,
         }),
       });
 
