@@ -13,6 +13,7 @@ interface BlogPost {
   id: string;
   slug: string;
   title: string;
+  tldr: string | null;
   content: string;
   content_html: string | null;
   published_at: string;
@@ -230,6 +231,14 @@ export default async function BlogPostPage({
           <h1 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] leading-tight">
             {post.title}
           </h1>
+
+          {/* TL;DR */}
+          {post.tldr && (
+            <div className="mt-6 bg-[#1A1A1A] text-white rounded-lg p-4">
+              <span className="text-[#FF5C35] font-mono text-sm font-bold">TL;DR</span>
+              <p className="mt-1 text-[#E5E5E5]">{post.tldr}</p>
+            </div>
+          )}
         </header>
 
         {/* Preview content - always visible (for SEO and teaser) */}

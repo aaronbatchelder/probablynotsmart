@@ -5,6 +5,7 @@ import { LaurieDecision } from './laurie';
 export interface RichardOutput {
   blog_post: {
     title: string;
+    tldr: string;
     content: string;
     slug: string;
   };
@@ -22,6 +23,7 @@ export interface RichardOutput {
 const defaultOutput: RichardOutput = {
   blog_post: {
     title: 'Run Update',
+    tldr: 'Update pending.',
     content: 'Unable to generate blog post.',
     slug: 'run-update',
   },
@@ -68,11 +70,14 @@ Blog post should be 400-600 words, covering:
 - What Jin Yang is doing on Moltbook (the AI agent social network)
 - Include before/after screenshots if available (use markdown image syntax with the URLs provided)
 
+IMPORTANT: Include a TL;DR at the top - a 1-2 sentence summary for people who won't read the whole post. Make it punchy and capture the key takeaway.
+
 Respond in JSON format:
 {
   "blog_post": {
     "title": "Title of the blog post",
-    "content": "Full blog post content in markdown",
+    "tldr": "1-2 sentence summary of what happened and the key takeaway",
+    "content": "Full blog post content in markdown (do NOT include the tldr here, it's separate)",
     "slug": "url-friendly-slug"
   },
   "social_posts": {

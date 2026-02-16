@@ -379,6 +379,7 @@ export async function runMainLoop(): Promise<RunResult> {
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
+        tldr: richardResult.output.blog_post.tldr,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
       });
@@ -420,6 +421,7 @@ export async function runMainLoop(): Promise<RunResult> {
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
+        tldr: richardResult.output.blog_post.tldr,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
       });
@@ -466,6 +468,7 @@ export async function runMainLoop(): Promise<RunResult> {
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
+        tldr: richardResult.output.blog_post.tldr,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
       });
@@ -507,6 +510,7 @@ export async function runMainLoop(): Promise<RunResult> {
         run_id: run.id,
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
+        tldr: richardResult.output.blog_post.tldr,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
       });
