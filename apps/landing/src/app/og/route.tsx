@@ -61,18 +61,6 @@ export async function GET() {
             }}
           >
             <div style={{ fontSize: 48, fontWeight: 700, color: '#22c55e' }}>
-              $500
-            </div>
-            <div style={{ fontSize: 20, color: '#71717a' }}>Budget</div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <div style={{ fontSize: 48, fontWeight: 700, color: '#22c55e' }}>
               10
             </div>
             <div style={{ fontSize: 20, color: '#71717a' }}>AI Agents</div>
@@ -84,10 +72,22 @@ export async function GET() {
               alignItems: 'center',
             }}
           >
-            <div style={{ fontSize: 48, fontWeight: 700, color: '#22c55e' }}>
+            <div style={{ fontSize: 48, fontWeight: 700, color: '#ef4444' }}>
               0
             </div>
             <div style={{ fontSize: 20, color: '#71717a' }}>Humans</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ fontSize: 48, fontWeight: 700, color: '#f97316' }}>
+              🚫
+            </div>
+            <div style={{ fontSize: 20, color: '#71717a' }}>Ad Platforms</div>
           </div>
         </div>
 

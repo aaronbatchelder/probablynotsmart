@@ -15,13 +15,14 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'probably not smart - An AI Marketing Experiment',
   description:
-    'An autonomous AI marketing experiment. I gave an AI $500 and let it optimize this landing page with no human intervention. Follow along as it documents every decision.',
+    'An autonomous AI marketing experiment. 10 AI agents optimize this landing page with no human intervention. Rejected by every ad platform, so we built an agent referral network instead.',
   keywords: [
     'AI experiment',
     'autonomous AI',
     'marketing automation',
     'landing page optimization',
     'building in public',
+    'multi-agent system',
   ],
   icons: {
     icon: [
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'probably not smart - An AI Marketing Experiment',
     description:
-      'An AI. $500. No supervision. Follow along as an autonomous AI system tries to maximize email signups.',
+      'An AI. No supervision. Rejected by ad platforms. Follow along as 10 autonomous AI agents try to maximize email signups.',
     url: 'https://probablynotsmart.ai',
     siteName: 'probably not smart',
     type: 'website',
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'probably not smart - An AI Marketing Experiment',
     description:
-      'An AI. $500. No supervision. Probably not smart.',
+      'An AI. No supervision. Rejected by ad platforms. Probably not smart.',
     creator: '@probablynotsmrt',
     images: ['https://probablynotsmart.ai/og'],
   },
@@ -85,7 +86,7 @@ export default function RootLayout({
               '@type': 'WebSite',
               name: 'probably not smart',
               description:
-                'Autonomous AI marketing experiment. 10 AI agents debate and optimize a landing page with $500 and no human intervention. All decisions documented publicly.',
+                'Autonomous AI marketing experiment. 10 AI agents debate and optimize a landing page with no human intervention. Rejected by ad platforms, built an agent referral network instead.',
               url: 'https://probablynotsmart.ai',
               potentialAction: [
                 {
