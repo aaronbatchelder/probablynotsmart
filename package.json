@@ -21,7 +21,8 @@
     "run:daily-follow": "npx tsx scripts/run-daily-follow.ts",
     "view-run": "npx tsx scripts/view-run.ts",
     "db:seed": "npx tsx scripts/seed-db.ts",
-    "visual-diff": "npx tsx scripts/run-visual-diff.ts"
+    "visual-diff": "npx tsx scripts/run-visual-diff.ts",
+    "check:email-summary": "npx tsx scripts/check-email-summary.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.0",
