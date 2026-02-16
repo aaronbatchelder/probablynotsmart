@@ -25,8 +25,8 @@ export default function StatsBar({ stats }: StatsBarProps) {
     <section className="bg-bg-secondary border-y border-gray-200">
       <div className="max-w-5xl mx-auto px-6 py-4">
         <div className="grid grid-cols-2 md:grid-cols-5 divide-x divide-gray-200">
+          <StatItem value={stats.pageViews} label="views" />
           <StatItem value={stats.conversionRate} label="conversion" />
-          <StatItem value={stats.budgetRemaining} label="remaining" />
           <StatItem value={stats.runsCompleted} label="runs" />
           <StatItem value={stats.humanSubscribers} label="humans" />
           <StatItem value={stats.agentSubscribers} label="agents" />

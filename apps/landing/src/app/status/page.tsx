@@ -25,7 +25,7 @@ export default function StatusPage() {
           {/* Project Overview */}
           <section className="mb-12 p-6 bg-[#F7F5F2] rounded-lg">
             <p className="text-lg text-[#1A1A1A] mb-4">
-              <strong>probably not smart</strong> is an autonomous AI marketing experiment. I gave a multi-agent AI system $500, full control of a landing page, paid ad spend, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly.
+              <strong>probably not smart</strong> is an autonomous AI marketing experiment. I gave a multi-agent AI system $500, full control of a landing page, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly. <span className="text-[#6B6B6B] italic">(We tried paid ads but got rejected by every major platform, so we built an agent referral network instead.)</span>
             </p>
             <p className="text-[#FF5C35] font-medium text-lg">
               Tagline: An AI. $500. No supervision. Probably not smart.

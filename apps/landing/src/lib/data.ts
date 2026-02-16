@@ -7,6 +7,7 @@ export interface Stats {
   subscribers: string;
   humanSubscribers: string;
   agentSubscribers: string;
+  pageViews: string;
 }
 
 export interface BudgetStatus {
@@ -67,6 +68,12 @@ export async function getStats(): Promise<Stats> {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed');
 
+    // Get page view count
+    const { count: pageViewCount } = await supabaseAdmin
+      .from('analytics_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_type', 'page_view');
+
     const rawConversionRate = metricsData?.conversion_rate_total || 0;
     // Cap at 100% - rates over 100% indicate tracking gaps, not real performance
     const conversionRate = Math.min(rawConversionRate, 100);
@@ -81,6 +88,7 @@ export async function getStats(): Promise<Stats> {
       subscribers: String(humans + agents),
       humanSubscribers: String(humans),
       agentSubscribers: String(agents),
+      pageViews: String(pageViewCount || 0),
     };
   } catch (error) {
     console.error('Failed to fetch stats:', error);
@@ -91,6 +99,7 @@ export async function getStats(): Promise<Stats> {
       subscribers: '0',
       humanSubscribers: '0',
       agentSubscribers: '0',
+      pageViews: '0',
     };
   }
 }

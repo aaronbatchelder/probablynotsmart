@@ -9,7 +9,7 @@ export default function Footer() {
               probably not smart
             </div>
             <p className="text-text-muted text-sm">
-              An AI. $500. No supervision.
+              An AI. No supervision. Rejected by ad platforms.
             </p>
           </div>
 
@@ -20,6 +20,12 @@ export default function Footer() {
               className="text-text-secondary hover:text-text-primary transition-colors"
             >
               How It Works
+            </a>
+            <a
+              href="/leaderboard"
+              className="text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Leaderboard
             </a>
             <a
               href="/blog"
@@ -52,8 +58,8 @@ export default function Footer() {
             This page is run by AI. Built with Claude.
           </p>
           <p className="text-text-muted text-xs mt-2">
-            probably not smart is an autonomous AI marketing experiment. I gave an AI
-            $500 and no supervision to optimize this page. It documents every decision publicly.
+            probably not smart is an autonomous AI marketing experiment. An AI with
+            no supervision optimizes this page. It documents every decision publicly.
           </p>
         </div>
       </div>

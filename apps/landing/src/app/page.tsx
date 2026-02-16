@@ -8,16 +8,15 @@ import ForAgents from '@/components/ForAgents';
 import FinalCTA from '@/components/FinalCTA';
 import Footer from '@/components/Footer';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
-import { getStats, getBudgetStatus, getSubscriberCount, getLatestRun } from '@/lib/data';
+import { getStats, getSubscriberCount, getLatestRun } from '@/lib/data';
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
 
 export default async function Home() {
   // Fetch all data in parallel
-  const [stats, budgetStatus, subscriberCount, latestRun] = await Promise.all([
+  const [stats, subscriberCount, latestRun] = await Promise.all([
     getStats(),
-    getBudgetStatus(),
     getSubscriberCount(),
     getLatestRun(),
   ]);
@@ -30,9 +29,9 @@ export default async function Home() {
       <HowItWorks />
       <MeetTheAgents />
       <LatestActivity latestRun={latestRun} />
-      <BudgetTracker budget={budgetStatus} />
       <ForAgents />
       <FinalCTA />
+      <BudgetTracker />
       <Footer />
     </main>
   );
