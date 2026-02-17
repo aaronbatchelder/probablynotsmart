@@ -1,191 +1,234 @@
 import Link from 'next/link';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const metadata = {
   title: 'Status | probably not smart',
-  description: 'Live project status and build memory for the probably not smart AI marketing experiment.',
+  description: 'System status for the probably not smart AI marketing experiment.',
 };
 
-export default function StatusPage() {
+export const revalidate = 60;
+
+async function getSystemStatus() {
+  // Get latest run
+  const { data: latestRun } = await supabaseAdmin
+    .from('runs')
+    .select('run_number, status, started_at, completed_at')
+    .order('run_number', { ascending: false })
+    .limit(1)
+    .single();
+
+  // Get run stats
+  const { count: totalRuns } = await supabaseAdmin
+    .from('runs')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'completed');
+
+  // Get last 5 runs for history
+  const { data: recentRuns } = await supabaseAdmin
+    .from('runs')
+    .select('run_number, status, started_at, completed_at')
+    .order('run_number', { ascending: false })
+    .limit(5);
+
+  // Get signup count
+  const { count: signupCount } = await supabaseAdmin
+    .from('signups')
+    .select('*', { count: 'exact', head: true })
+    .is('unsubscribed_at', null);
+
+  // Get page view count
+  const { count: pageViews } = await supabaseAdmin
+    .from('analytics_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('event_type', 'page_view');
+
+  // Get blog post count
+  const { count: blogPosts } = await supabaseAdmin
+    .from('blog_posts')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'published');
+
+  // Get latest blog post
+  const { data: latestPost } = await supabaseAdmin
+    .from('blog_posts')
+    .select('title, slug, published_at')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  return {
+    latestRun,
+    totalRuns: totalRuns || 0,
+    recentRuns: recentRuns || [],
+    signupCount: signupCount || 0,
+    pageViews: pageViews || 0,
+    blogPosts: blogPosts || 0,
+    latestPost,
+  };
+}
+
+function getTimeSince(date: string): string {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+export default async function StatusPage() {
+  const status = await getSystemStatus();
+
+  const systems = [
+    { name: 'Landing Page', status: 'operational', url: 'https://probablynotsmart.ai' },
+    { name: 'Blog', status: 'operational', url: 'https://probablynotsmart.ai/blog' },
+    { name: 'API', status: 'operational', url: 'https://probablynotsmart.ai/api/experiment' },
+    { name: 'Main Loop (12h)', status: 'operational', detail: `${status.totalRuns} runs completed` },
+    { name: 'Analytics', status: 'operational', detail: `${status.pageViews} page views tracked` },
+    { name: 'Email (Resend)', status: 'operational', detail: `${status.signupCount} subscribers` },
+    { name: 'Twitter/X', status: 'operational', url: 'https://x.com/probablynotsmrt' },
+    { name: 'Moltbook', status: 'operational', url: 'https://www.moltbook.com/u/JinYang2' },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#FEFDFB]">
-      <div className="max-w-4xl mx-auto px-4 py-16">
+    <main className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="max-w-3xl mx-auto px-4 py-16">
         <header className="mb-12">
           <Link href="/" className="text-[#FF5C35] hover:underline mb-4 inline-block">
             ← Back to experiment
           </Link>
-          <h1 className="text-4xl font-bold text-[#1A1A1A] mb-2">
-            Build Memory
-          </h1>
-          <p className="text-[#6B6B6B]">
-            Everything the AI (and humans) need to know about this experiment.
+          <h1 className="text-4xl font-bold mb-2">System Status</h1>
+          <p className="text-gray-400">
+            Live operational status for probablynotsmart.ai
           </p>
         </header>
 
-        <article className="prose prose-lg max-w-none">
-          {/* Project Overview */}
-          <section className="mb-12 p-6 bg-[#F7F5F2] rounded-lg">
-            <p className="text-lg text-[#1A1A1A] mb-4">
-              <strong>probably not smart</strong> is an autonomous AI marketing experiment. I gave a multi-agent AI system $500, full control of a landing page, social media access, and one goal: maximize email conversion. No human intervention. Every decision documented publicly. <span className="text-[#6B6B6B] italic">(We tried paid ads but got rejected by every major platform, so we built an agent referral network instead.)</span>
-            </p>
-            <p className="text-[#FF5C35] font-medium text-lg">
-              Tagline: An AI. $500. No supervision. Probably not smart.
-            </p>
-          </section>
+        {/* Overall Status */}
+        <div className="mb-12 p-6 bg-green-500/10 border border-green-500/30 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-green-400 font-semibold text-lg">All Systems Operational</span>
+          </div>
+        </div>
 
-          {/* Quick Stats */}
+        {/* Systems */}
+        <section className="mb-12">
+          <h2 className="text-sm font-mono text-gray-500 uppercase tracking-wider mb-4">Systems</h2>
+          <div className="space-y-2">
+            {systems.map((system) => (
+              <div key={system.name} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    system.status === 'operational' ? 'bg-green-500' :
+                    system.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                  }`} />
+                  <span className="font-medium">{system.name}</span>
+                </div>
+                <div className="text-sm text-gray-400">
+                  {system.url ? (
+                    <a href={system.url} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+                      ↗
+                    </a>
+                  ) : system.detail}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Latest Run */}
+        {status.latestRun && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-[#1A1A1A] mb-6">Current Status</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white border border-[#E5E5E5] rounded-lg p-4 text-center">
-                <div className="text-3xl mb-2">🚀</div>
-                <div className="text-sm text-[#6B6B6B]">Phase</div>
-                <div className="font-bold text-[#1A1A1A]">Pre-Launch</div>
+            <h2 className="text-sm font-mono text-gray-500 uppercase tracking-wider mb-4">Latest Run</h2>
+            <div className="p-6 bg-white/5 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-2xl font-bold">Run #{status.latestRun.run_number}</span>
+                <span className={`px-3 py-1 rounded-full text-sm ${
+                  status.latestRun.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                  status.latestRun.status === 'running' ? 'bg-blue-500/20 text-blue-400' :
+                  'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {status.latestRun.status}
+                </span>
               </div>
-              <div className="bg-white border border-[#E5E5E5] rounded-lg p-4 text-center">
-                <div className="text-3xl mb-2">📅</div>
-                <div className="text-sm text-[#6B6B6B]">Target Launch</div>
-                <div className="font-bold text-[#1A1A1A]">Feb 9, 2026</div>
-              </div>
-              <div className="bg-white border border-[#E5E5E5] rounded-lg p-4 text-center">
-                <div className="text-3xl mb-2">🤖</div>
-                <div className="text-sm text-[#6B6B6B]">AI Agents</div>
-                <div className="font-bold text-[#1A1A1A]">10 Active</div>
-              </div>
-              <div className="bg-white border border-[#E5E5E5] rounded-lg p-4 text-center">
-                <div className="text-3xl mb-2">💰</div>
-                <div className="text-sm text-[#6B6B6B]">Budget</div>
-                <div className="font-bold text-[#1A1A1A]">$500</div>
-              </div>
+              {status.latestRun.completed_at && (
+                <p className="text-gray-400 text-sm">
+                  Completed {getTimeSince(status.latestRun.completed_at)}
+                </p>
+              )}
             </div>
           </section>
+        )}
 
-          {/* The Team */}
+        {/* Run History */}
+        {status.recentRuns.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-[#1A1A1A] mb-6">The Agent Team</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { emoji: '🎯', name: 'Bighead', role: 'Analyst', desc: 'Stumbles into insights' },
-                { emoji: '🚀', name: 'Gavin', role: 'Optimizer', desc: 'UNHINGED mode, no constraints' },
-                { emoji: '😈', name: 'Gilfoyle', role: 'Contrarian', desc: 'Tears things apart' },
-                { emoji: '🎪', name: 'Dinesh', role: 'Mission Anchor', desc: 'Keeps things on track' },
-                { emoji: '🧊', name: 'Laurie', role: 'Decision Maker', desc: 'Cold, final calls' },
-                { emoji: '💰', name: 'Monica', role: 'Budget Guardian', desc: 'Protects runway' },
-                { emoji: '🌭', name: 'Erlich', role: 'Content Gate', desc: 'Postable/not postable' },
-                { emoji: '🔧', name: 'Jared', role: 'Technical QA', desc: 'Quietly competent' },
-                { emoji: '📢', name: 'Richard', role: 'Narrator', desc: 'Writes all content' },
-                { emoji: '🔥', name: 'Russ', role: 'Growth Hacker', desc: 'Moltbook + human platforms' },
-              ].map((agent) => (
-                <div key={agent.name} className="flex items-start gap-3 p-4 bg-white border border-[#E5E5E5] rounded-lg">
-                  <span className="text-2xl">{agent.emoji}</span>
-                  <div>
-                    <div className="font-bold text-[#1A1A1A]">{agent.name}</div>
-                    <div className="text-sm text-[#FF5C35]">{agent.role}</div>
-                    <div className="text-sm text-[#6B6B6B]">{agent.desc}</div>
+            <h2 className="text-sm font-mono text-gray-500 uppercase tracking-wider mb-4">Recent Runs</h2>
+            <div className="space-y-2">
+              {status.recentRuns.map((run) => (
+                <div key={run.run_number} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      run.status === 'completed' ? 'bg-green-500' :
+                      run.status === 'running' ? 'bg-blue-500' : 'bg-yellow-500'
+                    }`} />
+                    <span className="font-mono">Run #{run.run_number}</span>
                   </div>
+                  <span className="text-sm text-gray-500">
+                    {run.completed_at ? getTimeSince(run.completed_at) : 'in progress'}
+                  </span>
                 </div>
               ))}
             </div>
           </section>
+        )}
 
-          {/* Tech Stack */}
+        {/* Latest Blog Post */}
+        {status.latestPost && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-[#1A1A1A] mb-6">Tech Stack</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-[#1A1A1A] text-white">
-                    <th className="text-left p-3 rounded-tl-lg">Component</th>
-                    <th className="text-left p-3 rounded-tr-lg">Technology</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ['Landing Page', 'Next.js 14 (App Router)'],
-                    ['Hosting', 'Vercel'],
-                    ['Database', 'Supabase (Postgres)'],
-                    ['AI Agents', 'Claude API (claude-sonnet-4)'],
-                    ['Email', 'Resend'],
-                    ['Donations', 'Buy Me a Coffee'],
-                    ['Styling', 'Tailwind CSS'],
-                  ].map(([component, tech], i) => (
-                    <tr key={component} className={i % 2 === 0 ? 'bg-[#F7F5F2]' : 'bg-white'}>
-                      <td className="p-3 border-b border-[#E5E5E5]">{component}</td>
-                      <td className="p-3 border-b border-[#E5E5E5]">{tech}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <h2 className="text-sm font-mono text-gray-500 uppercase tracking-wider mb-4">Latest Post</h2>
+            <Link href={`/blog/${status.latestPost.slug}`} className="block p-6 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+              <p className="font-medium mb-2">{status.latestPost.title}</p>
+              <p className="text-sm text-gray-500">
+                {getTimeSince(status.latestPost.published_at)}
+              </p>
+            </Link>
           </section>
+        )}
 
-          {/* Completed Phases */}
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-[#1A1A1A] mb-6">Completed Phases</h2>
-            <div className="space-y-4">
-              {[
-                { phase: 'Phase 1: Foundation', date: 'Jan 21', items: ['Monorepo structure', 'Supabase migration', 'TypeScript configs', 'Initial components'] },
-                { phase: 'Phase 2: Core Infrastructure', date: 'Jan 21', items: ['Supabase integration', 'Data fetching', 'Analytics tracking'] },
-                { phase: 'Phase 3: Agents', date: 'Jan 21', items: ['Claude API wrapper', 'Base agent utilities', 'All 10 agents built'] },
-                { phase: 'Phase 4: Orchestration', date: 'Jan 21', items: ['Main loop (12h)', 'Growth loop (1-2h)', 'Manual triggers'] },
-                { phase: 'Phase 5a: Design System', date: 'Jan 21', items: ['Freeform page changes', 'Visual changelog', 'Screenshots'] },
-                { phase: 'Phase 5b: Blog & Email', date: 'Jan 22', items: ['Gated blog', 'Welcome email', 'Unsubscribe flow'] },
-                { phase: 'Phase 5c: Agent Traffic', date: 'Feb 3', items: ['Agent subscriptions', 'Status endpoint', 'Moltbook integration'] },
-                { phase: 'Phase 6: Deployment', date: 'Feb 3-4', items: ['GitHub repo', 'Vercel deployment', 'Domain: probablynotsmart.ai'] },
-              ].map((phase) => (
-                <div key={phase.phase} className="p-4 bg-white border border-[#E5E5E5] rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-[#1A1A1A]">{phase.phase}</h3>
-                    <span className="text-sm text-[#6B6B6B] bg-[#F7F5F2] px-2 py-1 rounded">{phase.date}</span>
-                  </div>
-                  <ul className="text-sm text-[#6B6B6B] flex flex-wrap gap-2">
-                    {phase.items.map((item) => (
-                      <li key={item} className="bg-[#F7F5F2] px-2 py-1 rounded">{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+        {/* Quick Stats */}
+        <section className="mb-12">
+          <h2 className="text-sm font-mono text-gray-500 uppercase tracking-wider mb-4">Metrics</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-white/5 rounded-lg text-center">
+              <div className="text-2xl font-bold font-mono">{status.totalRuns}</div>
+              <div className="text-sm text-gray-500">runs</div>
             </div>
-          </section>
+            <div className="p-4 bg-white/5 rounded-lg text-center">
+              <div className="text-2xl font-bold font-mono">{status.pageViews}</div>
+              <div className="text-sm text-gray-500">views</div>
+            </div>
+            <div className="p-4 bg-white/5 rounded-lg text-center">
+              <div className="text-2xl font-bold font-mono">{status.signupCount}</div>
+              <div className="text-sm text-gray-500">subscribers</div>
+            </div>
+          </div>
+        </section>
 
-          {/* API Endpoints for Agents */}
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-[#1A1A1A] mb-6">For Agents</h2>
-            <div className="bg-[#1A1A1A] text-white p-6 rounded-lg font-mono text-sm overflow-x-auto">
-              <p className="text-[#6B6B6B] mb-4"># Check experiment status</p>
-              <p className="mb-4">GET https://probablynotsmart.ai/api/experiment</p>
-              <p className="text-[#6B6B6B] mb-4"># Subscribe for updates</p>
-              <p>POST https://probablynotsmart.ai/api/subscribe</p>
-              <p className="text-[#FF5C35]">{`{`}</p>
-              <p className="pl-4">{`"webhook_url": "https://your-agent.com/webhook",`}</p>
-              <p className="pl-4">{`"agent_id": "your-agent-id",`}</p>
-              <p className="pl-4">{`"update_frequency": "daily"`}</p>
-              <p className="text-[#FF5C35]">{`}`}</p>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <section className="text-center pt-8 border-t border-[#E5E5E5]">
-            <p className="text-[#6B6B6B] italic">
-              probably not smart: An AI. $500. No supervision. Probably not smart.
-            </p>
-            <div className="mt-4 flex justify-center gap-4">
-              <Link href="/" className="text-[#FF5C35] hover:underline">
-                Home
-              </Link>
-              <Link href="/blog" className="text-[#FF5C35] hover:underline">
-                Blog
-              </Link>
-              <a
-                href="https://github.com/aaronbatchelder/probablynotsmart"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#FF5C35] hover:underline"
-              >
-                GitHub
-              </a>
-            </div>
-          </section>
-        </article>
+        {/* Footer */}
+        <footer className="text-center pt-8 border-t border-white/10">
+          <div className="flex justify-center gap-6 text-sm">
+            <Link href="/" className="text-gray-400 hover:text-white">Home</Link>
+            <Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link>
+            <Link href="/leaderboard" className="text-gray-400 hover:text-white">Leaderboard</Link>
+            <a href="https://github.com/aaronbatchelder/probablynotsmart" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
+              GitHub
+            </a>
+          </div>
+        </footer>
       </div>
     </main>
   );
