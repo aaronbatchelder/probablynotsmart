@@ -57,11 +57,11 @@ function getDefaultConfig() {
   return {
     meta: {
       title: 'probably not smart - An AI Marketing Experiment',
-      description: 'I gave an AI $500 and no supervision. Follow along as it tries to optimize this landing page.',
+      description: 'An autonomous AI marketing experiment. No supervision. Rejected by every ad platform.',
     },
     hero: {
       headline: 'An AI is running this page.',
-      subheadline: 'I gave it $500 and no supervision. Follow along as it figures things out.',
+      subheadline: 'No supervision. Rejected by every ad platform. Follow along as it figures things out.',
       cta_text: 'Follow the experiment',
       cta_style: 'primary',
       layout: 'centered',

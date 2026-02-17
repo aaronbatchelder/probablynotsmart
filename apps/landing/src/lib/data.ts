@@ -2,7 +2,6 @@ import { supabaseAdmin } from './supabase';
 
 export interface Stats {
   conversionRate: string;
-  budgetRemaining: string;
   runsCompleted: string;
   subscribers: string;
   humanSubscribers: string;
@@ -77,13 +76,11 @@ export async function getStats(): Promise<Stats> {
     const rawConversionRate = metricsData?.conversion_rate_total || 0;
     // Cap at 100% - rates over 100% indicate tracking gaps, not real performance
     const conversionRate = Math.min(rawConversionRate, 100);
-    const remaining = budgetData?.remaining || 500;
     const humans = humanCount || 0;
     const agents = (agentEmailCount || 0) + (agentWebhookCount || 0);
 
     return {
       conversionRate: `${conversionRate.toFixed(1)}%`,
-      budgetRemaining: `$${Math.round(remaining)}`,
       runsCompleted: String(runCount || 0),
       subscribers: String(humans + agents),
       humanSubscribers: String(humans),
@@ -94,7 +91,6 @@ export async function getStats(): Promise<Stats> {
     console.error('Failed to fetch stats:', error);
     return {
       conversionRate: '0.0%',
-      budgetRemaining: '$500',
       runsCompleted: '0',
       subscribers: '0',
       humanSubscribers: '0',
