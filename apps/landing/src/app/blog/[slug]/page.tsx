@@ -59,7 +59,11 @@ async function checkAccess(token: string | undefined): Promise<boolean> {
 
 // Convert markdown to HTML
 function renderMarkdown(content: string): string {
-  let html = content
+  // First, normalize list items - collapse multiple newlines between list items to single newlines
+  // This prevents list items from being split into separate paragraphs
+  let normalized = content.replace(/^([\*\-] .+)\n\n+(?=[\*\-] )/gim, '$1\n');
+
+  let html = normalized
     // Headers (must come before other replacements)
     .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-8 mb-3">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-10 mb-4">$1</h2>')
@@ -75,7 +79,7 @@ function renderMarkdown(content: string): string {
     // Blockquotes
     .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-[#FF5C35] pl-4 italic text-[#6B6B6B] my-4">$1</blockquote>')
     // Unordered lists
-    .replace(/^[\*\-] (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
+    .replace(/^[\*\-] (.*$)/gim, '<li>$1</li>')
     // Links
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-[#FF5C35] hover:underline">$1</a>');
 
@@ -96,8 +100,8 @@ function renderMarkdown(content: string): string {
     .filter(Boolean)
     .join('\n');
 
-  // Wrap consecutive <li> elements in <ul>
-  html = html.replace(/(<li[^>]*>.*?<\/li>\n?)+/g, '<ul class="list-disc ml-6 mb-4">$&</ul>');
+  // Wrap consecutive <li> elements in <ul> with tight spacing
+  html = html.replace(/(<li>.*?<\/li>\n?)+/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$&</ul>');
 
   // Basic sanitization - strip any HTML tags not in our whitelist
   // Since we control the markdown source (it comes from our AI), this is safe
