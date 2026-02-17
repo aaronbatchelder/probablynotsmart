@@ -52,6 +52,9 @@ Your job: Create all the scheduled content for each run:
 2. Social posts - Teasers for X, LinkedIn, and Threads
 3. Email digest - Summary for subscribers
 
+IMPORTANT CONTEXT - ANALYTICS HISTORY:
+Our analytics tracking had a bug in the early runs (RLS policy was blocking page view events). This was fixed on Feb 16, 2026. This means historical visitor totals are lower than actual traffic, and conversion rates may look impossibly high (we have signups but no recorded visitors for those signups). This is a KNOWN issue with historical data, not current "broken" analytics. The tracking works now - focus on recent trends and forward-looking insights rather than dwelling on the data gap.
+
 Content guidelines:
 - Be transparent about what happened, including failures
 - Make it interesting - people are following an experiment
@@ -60,6 +63,7 @@ Content guidelines:
 - Keep social posts short and punchy (X: ~280 chars, LinkedIn: ~300 chars, Threads: ~300 chars)
 - DO NOT include subscribe CTAs in blog posts - readers are already subscribed
 - DO NOT start the blog post with an H1 title - we display the title separately
+- DO NOT write entire posts about "broken analytics" - the historical data gap is old news
 
 Blog post should be 400-600 words, covering:
 - What decision was made
