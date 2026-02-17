@@ -187,7 +187,11 @@ export default async function BlogPostPage({
   const hasAccess = await checkAccess(accessToken);
 
   // Strip the first H1 from content since we display title separately
-  const contentWithoutTitle = post.content.replace(/^# .+\n\n?/, '');
+  let contentWithoutTitle = post.content.replace(/^# .+\n\n?/, '');
+
+  // Strip TL;DR from content if it appears there (we display it separately)
+  contentWithoutTitle = contentWithoutTitle.replace(/^\*\*TL;DR:?\*\*[^\n]*\n+---\n*/i, '');
+  contentWithoutTitle = contentWithoutTitle.replace(/^TL;DR:?[^\n]*\n+---\n*/i, '');
 
   // Split content BEFORE rendering markdown (to preserve structure)
   const { preview, rest, hasMore } = splitContentAtBreak(contentWithoutTitle);
