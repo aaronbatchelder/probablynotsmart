@@ -380,8 +380,11 @@ export async function runMainLoop(): Promise<RunResult> {
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
         tldr: richardResult.output.blog_post.tldr,
+        changes_summary: richardResult.output.blog_post.changes_summary,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
+        screenshots_before: context.previousOutputs?.screenshots?.before || null,
+        screenshots_after: context.previousOutputs?.screenshots?.after || null,
       });
 
       await updateRun(run.id, {
@@ -422,8 +425,11 @@ export async function runMainLoop(): Promise<RunResult> {
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
         tldr: richardResult.output.blog_post.tldr,
+        changes_summary: richardResult.output.blog_post.changes_summary,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
+        screenshots_before: context.previousOutputs?.screenshots?.before || null,
+        screenshots_after: context.previousOutputs?.screenshots?.after || null,
       });
 
       await updateRun(run.id, {
@@ -469,8 +475,11 @@ export async function runMainLoop(): Promise<RunResult> {
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
         tldr: richardResult.output.blog_post.tldr,
+        changes_summary: richardResult.output.blog_post.changes_summary,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
+        screenshots_before: context.previousOutputs?.screenshots?.before || null,
+        screenshots_after: context.previousOutputs?.screenshots?.after || null,
       });
 
       await updateRun(run.id, {
@@ -511,8 +520,11 @@ export async function runMainLoop(): Promise<RunResult> {
         post_type: 'run_update',
         title: richardResult.output.blog_post.title,
         tldr: richardResult.output.blog_post.tldr,
+        changes_summary: richardResult.output.blog_post.changes_summary,
         slug: richardResult.output.blog_post.slug,
         content: richardResult.output.blog_post.content,
+        screenshots_before: context.previousOutputs?.screenshots?.before || null,
+        screenshots_after: context.previousOutputs?.screenshots?.after || null,
       });
 
       await updateRun(run.id, {
@@ -601,13 +613,17 @@ export async function runMainLoop(): Promise<RunResult> {
 
     // Save blog post
     await supabase.from('blog_posts').insert({
-        status: 'published',
-        published_at: new Date().toISOString(),
+      status: 'published',
+      published_at: new Date().toISOString(),
       run_id: run.id,
       post_type: 'run_update',
       title: richardResult.output.blog_post.title,
+      tldr: richardResult.output.blog_post.tldr,
+      changes_summary: richardResult.output.blog_post.changes_summary,
       slug: richardResult.output.blog_post.slug,
       content: richardResult.output.blog_post.content,
+      screenshots_before: screenshotsBefore,
+      screenshots_after: screenshotsAfter,
     });
 
     // Get final metrics and page state

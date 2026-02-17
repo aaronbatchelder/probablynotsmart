@@ -9,11 +9,18 @@ export const revalidate = 60;
 // How many characters to show before the gate (roughly 300 words)
 const PREVIEW_CHAR_COUNT = 1500;
 
+interface ScreenshotSet {
+  desktop: string | null;
+  tablet: string | null;
+  mobile: string | null;
+}
+
 interface BlogPost {
   id: string;
   slug: string;
   title: string;
   tldr: string | null;
+  changes_summary: string | null;
   content: string;
   content_html: string | null;
   published_at: string;
@@ -21,6 +28,8 @@ interface BlogPost {
   post_type: string;
   meta_title: string | null;
   meta_description: string | null;
+  screenshots_before: ScreenshotSet | null;
+  screenshots_after: ScreenshotSet | null;
 }
 
 async function getPost(slug: string): Promise<BlogPost | null> {
@@ -248,6 +257,43 @@ export default async function BlogPostPage({
             </div>
           )}
         </header>
+
+        {/* Before/After Screenshots */}
+        {(post.screenshots_before?.desktop || post.screenshots_after?.desktop) && (
+          <section className="my-8">
+            <h2 className="text-sm font-mono text-[#6B6B6B] uppercase tracking-wider mb-4">Before & After</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {post.screenshots_before?.desktop && (
+                <div>
+                  <p className="text-xs font-mono text-[#6B6B6B] mb-2">BEFORE</p>
+                  <img
+                    src={post.screenshots_before.desktop}
+                    alt="Before changes"
+                    className="rounded-lg border border-[#E5E5E5] w-full"
+                  />
+                </div>
+              )}
+              {post.screenshots_after?.desktop && (
+                <div>
+                  <p className="text-xs font-mono text-[#6B6B6B] mb-2">AFTER</p>
+                  <img
+                    src={post.screenshots_after.desktop}
+                    alt="After changes"
+                    className="rounded-lg border border-[#E5E5E5] w-full"
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Changes Summary */}
+        {post.changes_summary && (
+          <section className="my-8 bg-[#F7F5F2] rounded-lg p-4">
+            <h2 className="text-sm font-mono text-[#6B6B6B] uppercase tracking-wider mb-2">What Changed</h2>
+            <p className="text-[#1A1A1A]">{post.changes_summary}</p>
+          </section>
+        )}
 
         {/* Preview content - always visible (for SEO and teaser) */}
         <div

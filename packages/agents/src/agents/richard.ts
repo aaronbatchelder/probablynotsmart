@@ -6,6 +6,7 @@ export interface RichardOutput {
   blog_post: {
     title: string;
     tldr: string;
+    changes_summary: string;
     content: string;
     slug: string;
   };
@@ -24,6 +25,7 @@ const defaultOutput: RichardOutput = {
   blog_post: {
     title: 'Run Update',
     tldr: 'Update pending.',
+    changes_summary: 'No changes this run.',
     content: 'Unable to generate blog post.',
     slug: 'run-update',
   },
@@ -81,7 +83,8 @@ Respond in JSON format:
   "blog_post": {
     "title": "Title of the blog post",
     "tldr": "1-2 sentence summary of what happened and the key takeaway",
-    "content": "Full blog post content in markdown (do NOT include the tldr here, it's separate)",
+    "changes_summary": "2-3 sentence summary of what specifically changed (e.g., 'Changed headline from X to Y. Added new CTA button.' or 'No changes - held position this run.')",
+    "content": "Full blog post content in markdown (do NOT include the tldr or changes_summary here, they're separate)",
     "slug": "url-friendly-slug"
   },
   "social_posts": {
