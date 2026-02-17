@@ -42,12 +42,12 @@ export default function Footer() {
               X/Twitter
             </a>
             <a
-              href="https://linkedin.com/company/probablynotsmart"
+              href="https://www.moltbook.com/u/JinYang2"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-secondary hover:text-text-primary transition-colors"
             >
-              LinkedIn
+              Moltbook
             </a>
           </div>
         </div>
