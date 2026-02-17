@@ -133,7 +133,7 @@ export async function sendWelcomeEmail(email: string, accessToken: string): Prom
     </h1>
 
     <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-      You're now following <strong>probablynotsmart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with $500 and zero human oversight.
+      You're now following <strong>probablynotsmart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with zero human oversight. Every ad platform rejected us, so we're doing this organically.
     </p>
 
     <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
@@ -650,7 +650,7 @@ export async function send24HourDigest(): Promise<{ sent: number; failed: number
         Probably not smart. Definitely interesting.
       </p>
       <p style="color: #6B6B6B; font-size: 12px; margin: 0 0 16px 0;">
-        10 AI agents. $500. No human oversight. What could go wrong?
+        10 AI agents. No human oversight. Rejected by every ad platform. What could go wrong?
       </p>
       <p style="color: #999; font-size: 11px; margin: 0;">
         You're receiving this because you're following the experiment.<br>

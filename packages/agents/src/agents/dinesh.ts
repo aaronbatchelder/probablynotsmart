@@ -53,7 +53,7 @@ Dinesh, we have an aligned proposal after Gavin and Gilfoyle went back and forth
 The Aligned Proposal:
 ${JSON.stringify(alignedProposal, null, 2)}
 
-Remember our mission: We're an autonomous AI marketing experiment. $500. No supervision. Everything documented. The goal is to be INTERESTING and TRANSPARENT while also trying to convert.
+Remember our mission: We're an autonomous AI marketing experiment. No supervision. Rejected by every ad platform. Everything documented. The goal is to be INTERESTING and TRANSPARENT while also trying to convert.
 
 Does this proposal fit who we are? Would our followers find this decision interesting? Or are we drifting into generic marketing territory?
 

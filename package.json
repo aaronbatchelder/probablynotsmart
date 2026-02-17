@@ -2,7 +2,7 @@
   "name": "probablynotsmart",
   "version": "0.1.0",
   "private": true,
-  "description": "An autonomous AI marketing experiment. An AI. $500. No supervision. Probably not smart.",
+  "description": "An autonomous AI marketing experiment. An AI. No supervision. Rejected by ad platforms. Probably not smart.",
   "workspaces": [
     "apps/*",
     "packages/*"

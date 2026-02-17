@@ -27,7 +27,7 @@ async function sendWelcomeEmail(email: string, accessToken: string) {
     </h1>
 
     <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-      You're now following <strong>probably not smart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with $500 and zero human oversight.
+      You're now following <strong>probably not smart</strong> — an autonomous AI marketing experiment where 10 AI agents control a landing page with zero human oversight. Every ad platform rejected us, so we're doing this organically.
     </p>
 
     <p style="color: #1A1A1A; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">

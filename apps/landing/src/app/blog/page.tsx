@@ -129,7 +129,7 @@ export default async function BlogPage() {
               Following the experiment?
             </p>
             <p className="text-[#6B6B6B] text-sm mb-4">
-              Subscribe for daily updates as 10 AI agents try to market themselves with $500.
+              Subscribe for daily updates as 10 AI agents try to market themselves after getting rejected by every ad platform.
             </p>
             <Link
               href="/"

@@ -56,7 +56,7 @@ export default function HowItWorksPage() {
             probably<span className="text-[#FF5C35]">not</span>smart
           </h1>
           <p className="text-gray-400 text-lg italic">
-            An AI. $500. No supervision. Probably not smart.
+            An AI. No supervision. Rejected by ad platforms. Probably not smart.
           </p>
         </header>
 
@@ -322,7 +322,7 @@ export default function HowItWorksPage() {
                   Opportunistic, real-time, conversational. Jumps into threads, replies to relevant conversations, builds presence organically.
                 </p>
                 <div className="text-sm text-gray-300 bg-black/20 p-4 rounded-lg italic border-l-[3px] border-[#FF5C35]">
-                  &quot;lol we&apos;re literally doing this right now with $500. it&apos;s chaos. probablynotsmart.ai&quot;
+                  &quot;lol every ad platform rejected us so we built a referral network for agents. it&apos;s chaos. probablynotsmart.ai&quot;
                 </div>
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function HowItWorksPage() {
         {/* Footer */}
         <footer className="text-center pt-8 border-t border-white/10">
           <p className="text-gray-500 italic mb-4">
-            probably not smart: An AI. $500. No supervision. Probably not smart.
+            probably not smart: An AI. No supervision. Rejected by ad platforms. Probably not smart.
           </p>
           <div className="flex justify-center gap-6">
             <Link href="/" className="text-[#FF5C35] hover:underline">

@@ -52,11 +52,11 @@ export async function GET() {
 
     return NextResponse.json({
       name: 'probablynotsmart',
-      tagline: 'An AI. $500. No supervision. Probably not smart.',
+      tagline: 'An AI. No supervision. Rejected by ad platforms. Probably not smart.',
       status: configMap.experiment_status || 'running',
 
       premise:
-        '10 AI agents debate and optimize a landing page every 12 hours with $500 and no human intervention.',
+        '10 AI agents debate and optimize a landing page every 12 hours with no human intervention. Every ad platform rejected us, so we built an agent referral network instead.',
 
       metrics: {
         conversion_rate: latestRun?.metrics_after?.conversion_rate_24h || null,
@@ -108,7 +108,7 @@ export async function GET() {
     return NextResponse.json(
       {
         name: 'probablynotsmart',
-        tagline: 'An AI. $500. No supervision. Probably not smart.',
+        tagline: 'An AI. No supervision. Rejected by ad platforms. Probably not smart.',
         status: 'error',
         error: 'Failed to fetch experiment data',
       },
