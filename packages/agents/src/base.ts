@@ -180,6 +180,7 @@ ${formatCollectiveMemory(context.collectiveMemory)}
  * Helper to format metrics for prompts
  */
 export function formatMetrics(metrics: AgentContext['metrics']): string {
+  // Only show 24h metrics - all-time totals are corrupted by pre-Feb-16 tracking gap
   return `
 Current Metrics (last 24h):
 - Visitors: ${metrics.visitors_24h}
@@ -187,10 +188,7 @@ Current Metrics (last 24h):
 - Signups: ${metrics.signups_24h}
 - Conversion Rate: ${metrics.conversion_rate_24h}%
 
-All-Time Metrics:
-- Total Visitors: ${metrics.visitors_total}
-- Total Signups: ${metrics.signups_total}
-- Overall Conversion Rate: ${metrics.conversion_rate_total}%
+Note: All-time totals are hidden due to historical tracking gap. Focus on 24h trends.
 `.trim();
 }
 
