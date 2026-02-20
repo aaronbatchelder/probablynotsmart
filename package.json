@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.0",
+    "@google-analytics/data": "^5.2.1",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {

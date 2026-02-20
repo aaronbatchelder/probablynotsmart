@@ -1,6 +1,27 @@
 'use client';
 
-import { supabase } from './supabase';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Lazy-initialize client-side Supabase to ensure env vars are available
+let supabaseClient: SupabaseClient | null = null;
+
+function getClientSupabase(): SupabaseClient | null {
+  if (typeof window === 'undefined') return null;
+
+  if (!supabaseClient) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+      console.error('Analytics: Missing Supabase env vars', { url: !!url, key: !!key });
+      return null;
+    }
+
+    supabaseClient = createClient(url, key);
+  }
+
+  return supabaseClient;
+}
 
 // Generate a simple visitor ID (persisted in localStorage)
 function getVisitorId(): string {
@@ -33,6 +54,12 @@ export interface TrackEventParams {
 
 export async function trackEvent({ event_type, event_data = {} }: TrackEventParams) {
   try {
+    const supabase = getClientSupabase();
+    if (!supabase) {
+      console.warn('Analytics: Supabase client not available');
+      return;
+    }
+
     const { error } = await supabase.from('analytics_events').insert({
       event_type,
       event_data,

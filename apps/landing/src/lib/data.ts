@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase';
+import { getGA4PageViews } from './ga4';
 
 export interface Stats {
   conversionRate: string;
@@ -67,11 +68,16 @@ export async function getStats(): Promise<Stats> {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'completed');
 
-    // Get page view count
-    const { count: pageViewCount } = await supabaseAdmin
-      .from('analytics_events')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_type', 'page_view');
+    // Get page view count - prefer GA4, fall back to Supabase
+    let pageViewCount = await getGA4PageViews();
+    if (pageViewCount === null) {
+      // Fallback to Supabase if GA4 fails
+      const { count } = await supabaseAdmin
+        .from('analytics_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_type', 'page_view');
+      pageViewCount = count || 0;
+    }
 
     const rawConversionRate = metricsData?.conversion_rate_total || 0;
     // Cap at 100% - rates over 100% indicate tracking gaps, not real performance
