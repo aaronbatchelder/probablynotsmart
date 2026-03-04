@@ -1,7 +1,5 @@
 'use client';
 
-import { supabase } from './supabase';
-
 // Generate a simple visitor ID (persisted in localStorage)
 function getVisitorId(): string {
   if (typeof window === 'undefined') return '';
@@ -33,18 +31,20 @@ export interface TrackEventParams {
 
 export async function trackEvent({ event_type, event_data = {} }: TrackEventParams) {
   try {
-    const { error } = await supabase.from('analytics_events').insert({
-      event_type,
-      event_data,
-      session_id: getSessionId(),
-      visitor_id: getVisitorId(),
-      page_url: typeof window !== 'undefined' ? window.location.href : null,
-      referrer: typeof document !== 'undefined' ? document.referrer : null,
-      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    const response = await fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type,
+        event_data,
+        session_id: getSessionId(),
+        visitor_id: getVisitorId(),
+        referrer: typeof document !== 'undefined' ? document.referrer : null,
+      }),
     });
 
-    if (error) {
-      console.error('Analytics error:', error);
+    if (!response.ok) {
+      console.error('Analytics error:', response.statusText);
     }
   } catch (err) {
     console.error('Failed to track event:', err);
