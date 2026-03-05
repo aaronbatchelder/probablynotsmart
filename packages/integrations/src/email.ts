@@ -453,7 +453,9 @@ async function getExperimentStats(): Promise<{
  * Send 24-hour digest email covering all runs from the past day
  */
 export async function send24HourDigest(): Promise<{ sent: number; failed: number; skipped: boolean }> {
-  console.log('[Email] Starting 24-hour digest...');
+  // Daily email send is temporarily disabled
+  console.log('[Email] Daily digest is currently disabled');
+  return { sent: 0, failed: 0, skipped: true };
 
   // Get runs from last 24 hours
   const runs = await getRunsLast24Hours();
