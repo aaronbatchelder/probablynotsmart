@@ -304,6 +304,10 @@ export async function sendDailyDigestToAll(params: {
   conversionAfter: number | null;
   blogPostSlug?: string;
 }): Promise<{ sent: number; failed: number }> {
+  // Daily email send is temporarily disabled
+  console.log('[Email] Daily digest (per-run) is currently disabled');
+  return { sent: 0, failed: 0 };
+
   // Get all active subscribers with daily digest enabled
   const { data: subscribers, error } = await supabase
     .from('signups')
